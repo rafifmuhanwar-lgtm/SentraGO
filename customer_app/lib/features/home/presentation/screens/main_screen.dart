@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../chat/presentation/screens/chat_list_screen.dart';
+import '../../../order/presentation/screens/order_list_screen.dart';
 import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -14,8 +16,8 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Center(child: Text('Order')),
-    const Center(child: Text('Chat')),
+    const OrderListScreen(),
+    const ChatListScreen(),
     const Center(child: Text('Profile')),
   ];
 
