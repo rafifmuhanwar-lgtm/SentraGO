@@ -7,6 +7,10 @@ import '../../features/home/presentation/screens/main_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_form_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_summary_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_success_screen.dart';
+import '../../features/chat/presentation/screens/chat_room_screen.dart';
+import '../../features/chat/domain/models/chat_room_model.dart';
+import '../../features/order/presentation/screens/order_detail_screen.dart';
+import '../../features/order/domain/models/order_model.dart';
 
 class AppRouter {
   AppRouter._();
@@ -49,6 +53,21 @@ class AppRouter {
         path: '/jastip/success',
         builder: (context, state) => const JastipSuccessScreen(),
       ),
+      GoRoute(
+        path: '/chat/room',
+        builder: (context, state) {
+          final room = state.extra as ChatRoomModel;
+          return ChatRoomScreen(room: room);
+        },
+      ),
+      GoRoute(
+        path: '/order/detail',
+        builder: (context, state) {
+          final order = state.extra as OrderModel;
+          return OrderDetailScreen(order: order);
+        },
+      ),
     ],
   );
 }
+
