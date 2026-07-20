@@ -34,7 +34,29 @@ class AuthRepository {
   Future<UserModel?> getCurrentUser() async {
     try {
       final appwriteUser = await _account.get();
-      final userData = _mapAppwriteUser(appwriteUser);
+      Map<String, dynamic> userData = _mapAppwriteUser(appwriteUser);
+
+      // Try to fetch additional user profile data from database
+      try {
+        final doc = await _databases.getDocument(
+          databaseId: AppConfig.appwriteDatabaseId,
+          collectionId: AppConfig.usersCollection,
+          documentId: appwriteUser.$id,
+        );
+        final docData = doc.data;
+        userData = {
+          ...userData,
+          'phone': docData['phone'] ?? userData['phone'],
+          'photoUrl': docData['photoUrl'] ?? userData['photoUrl'],
+          'selectedArea': docData['selectedArea'] ?? userData['selectedArea'],
+        };
+        if ((userData['name'] as String).isEmpty && docData['name'] != null) {
+          userData['name'] = docData['name'];
+        }
+      } catch (_) {
+        // Document might not exist yet, ignore
+      }
+
       return UserModel.fromJson(userData, appwriteUser.$id);
     } catch (e) {
       return null;
@@ -79,6 +101,21 @@ class AuthRepository {
         );
       }
       return user;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<UserModel> updateUserProfile(UserModel user) async {
+    try {
+      try {
+        if (user.name.isNotEmpty) {
+          await _account.updateName(name: user.name);
+        }
+      } catch (_) {
+        // Account update might require specific auth type, but proceed to database
+      }
+      return await saveUserToDatabase(user);
     } catch (e) {
       rethrow;
     }

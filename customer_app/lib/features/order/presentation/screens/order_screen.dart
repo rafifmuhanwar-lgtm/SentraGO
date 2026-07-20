@@ -9,7 +9,7 @@ class OrderScreen extends StatefulWidget {
   State<OrderScreen> createState() => _OrderScreenState();
 }
 
-class _OrderScreenState extends State<OrderScreen> with SingleTickerProviderStateMixin {
+class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin {
   late TabController _tabController;
 
   @override

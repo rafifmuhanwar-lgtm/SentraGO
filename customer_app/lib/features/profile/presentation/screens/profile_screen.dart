@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -19,7 +20,7 @@ class ProfileScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              // Navigate to settings
+              context.push('/profile/edit');
             },
           ),
         ],
@@ -64,6 +65,41 @@ class ProfileScreen extends ConsumerWidget {
                       fontSize: 14,
                     ),
                   ),
+                  if ((user?.phone ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      user?.phone ?? '',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                  if ((user?.selectedArea ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.white, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            user?.selectedArea ?? '',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -99,7 +135,19 @@ class ProfileScreen extends ConsumerWidget {
           ),
           trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
           onTap: () {
-            // Navigate to respective page
+            if (item.title == 'Edit Profil') {
+              context.push('/profile/edit');
+            } else if (item.title == 'Alamat Tersimpan') {
+              context.push('/profile/addresses');
+            } else if (item.title == 'Pembayaran') {
+              context.push('/profile/payment');
+            } else if (item.title == 'Pusat Bantuan') {
+              context.push('/profile/help');
+            } else if (item.title == 'Tentang Aplikasi') {
+              context.push('/profile/about');
+            } else if (item.title == 'Notifikasi') {
+              context.push('/profile/notifications');
+            }
           },
         )),
         const Divider(height: 1, color: AppColors.divider),

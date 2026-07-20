@@ -14,6 +14,12 @@ import '../../features/order/presentation/screens/order_detail_screen.dart';
 import '../../features/order/domain/models/order_model.dart';
 import '../../features/tracking/presentation/screens/tracking_screen.dart';
 import '../../features/suruh/presentation/screens/suruh_form_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile/presentation/screens/saved_addresses_screen.dart';
+import '../../features/profile/presentation/screens/payment_methods_screen.dart';
+import '../../features/profile/presentation/screens/help_center_screen.dart';
+import '../../features/profile/presentation/screens/about_app_screen.dart';
+import '../../features/profile/presentation/screens/notifications_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -97,6 +103,30 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/suruh',
         builder: (context, state) => const SuruhFormScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/addresses',
+        builder: (context, state) => const SavedAddressesScreen(),
+      ),
+      GoRoute(
+        path: '/profile/payment',
+        builder: (context, state) => const PaymentMethodsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/help',
+        builder: (context, state) => const HelpCenterScreen(),
+      ),
+      GoRoute(
+        path: '/profile/about',
+        builder: (context, state) => const AboutAppScreen(),
+      ),
+      GoRoute(
+        path: '/profile/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
     ],
   );
