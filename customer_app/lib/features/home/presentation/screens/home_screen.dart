@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+    final userName = authState.user?.name ?? 'Dinda';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
@@ -34,7 +39,7 @@ class HomeScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Hallo, Dinda 👋',
+                                  'Hallo, $userName 👋',
                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -113,7 +118,7 @@ class HomeScreen extends StatelessWidget {
                       subtitle: 'Suruh tugas apapun',
                       icon: Icons.motorcycle_rounded,
                       onTap: () {
-                        // Navigate to Jasa Suruh
+                        context.push('/suruh');
                       },
                     ),
                   ),

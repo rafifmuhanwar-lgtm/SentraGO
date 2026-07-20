@@ -1,8 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/location/presentation/screens/location_selection_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/home/presentation/screens/main_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_form_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_summary_screen.dart';
@@ -11,12 +12,38 @@ import '../../features/chat/presentation/screens/chat_room_screen.dart';
 import '../../features/chat/domain/models/chat_room_model.dart';
 import '../../features/order/presentation/screens/order_detail_screen.dart';
 import '../../features/order/domain/models/order_model.dart';
+import '../../features/tracking/presentation/screens/tracking_screen.dart';
+import '../../features/suruh/presentation/screens/suruh_form_screen.dart';
 
-class AppRouter {
-  AppRouter._();
+final goRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authStateProvider);
 
-  static final router = GoRouter(
+  return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) {
+      final isSplash = state.matchedLocation == '/';
+      final isLocation = state.matchedLocation == '/location';
+      final isLogin = state.matchedLocation == '/login';
+      final isAuthRoute = isSplash || isLocation || isLogin;
+
+      // Allow splash screen to handle its own flow
+      if (isSplash) return null;
+
+      // Allow location selection before login
+      if (isLocation) return null;
+
+      // If authenticated and on login, go to main
+      if (authState.status == AuthStatus.authenticated && isLogin) {
+        return '/main';
+      }
+
+      // If unauthenticated and not on an auth route, redirect to login
+      if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
+        return '/login';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',
@@ -29,10 +56,6 @@ class AppRouter {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/otp',
-        builder: (context, state) => const OtpScreen(),
       ),
       GoRoute(
         path: '/main',
@@ -67,7 +90,14 @@ class AppRouter {
           return OrderDetailScreen(order: order);
         },
       ),
+      GoRoute(
+        path: '/tracking',
+        builder: (context, state) => const TrackingScreen(),
+      ),
+      GoRoute(
+        path: '/suruh',
+        builder: (context, state) => const SuruhFormScreen(),
+      ),
     ],
   );
-}
-
+});

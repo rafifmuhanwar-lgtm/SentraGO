@@ -3,6 +3,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../chat/presentation/screens/chat_list_screen.dart';
 import '../../../order/presentation/screens/order_list_screen.dart';
 import 'home_screen.dart';
+import '../../../../features/order/presentation/screens/order_screen.dart';
+import '../../../../features/chat/presentation/screens/chat_screen.dart';
+import '../../../../features/profile/presentation/screens/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,9 +19,9 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const OrderListScreen(),
-    const ChatListScreen(),
-    const Center(child: Text('Profile')),
+    const OrderScreen(),
+    const ChatScreen(),
+    const ProfileScreen(),
   ];
 
   @override

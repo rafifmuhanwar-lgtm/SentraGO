@@ -1,47 +1,94 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/enums.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../../core/services/appwrite_client.dart';
+import '../models/user_model.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(const FlutterSecureStorage());
+  return AuthRepository(
+    account: ref.watch(accountProvider),
+    databases: ref.watch(databasesProvider),
+  );
 });
 
 class AuthRepository {
-  final FlutterSecureStorage _storage;
-  
-  AuthRepository(this._storage);
+  final Account _account;
+  final Databases _databases;
 
-  static const String _tokenKey = 'jwt_token';
+  AuthRepository({
+    required Account account,
+    required Databases databases,
+  })  : _account = account,
+        _databases = databases;
 
   Future<bool> isAuthenticated() async {
-    final token = await _storage.read(key: _tokenKey);
-    return token != null && token.isNotEmpty;
+    try {
+      await _account.get();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
-  Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+  Future<UserModel?> getCurrentUser() async {
+    try {
+      final appwriteUser = await _account.get();
+      final userData = _mapAppwriteUser(appwriteUser);
+      return UserModel.fromJson(userData, appwriteUser.$id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _mapAppwriteUser(dynamic user) {
+    return {
+      'name': user.name ?? '',
+      'email': user.email ?? '',
+      'phone': user.phone,
+      'photoUrl': null,
+    };
+  }
+
+  Future<void> signInWithGoogle() async {
+    await _account.createOAuth2Session(
+      provider: OAuthProvider.google,
+    );
+  }
+
+  Future<UserModel> saveUserToDatabase(UserModel user) async {
+    try {
+      try {
+        await _databases.getDocument(
+          databaseId: AppConfig.appwriteDatabaseId,
+          collectionId: AppConfig.usersCollection,
+          documentId: user.id,
+        );
+        await _databases.updateDocument(
+          databaseId: AppConfig.appwriteDatabaseId,
+          collectionId: AppConfig.usersCollection,
+          documentId: user.id,
+          data: user.toJson(),
+        );
+      } catch (e) {
+        await _databases.createDocument(
+          databaseId: AppConfig.appwriteDatabaseId,
+          collectionId: AppConfig.usersCollection,
+          documentId: user.id,
+          data: user.toJson(),
+        );
+      }
+      return user;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: _tokenKey);
-  }
-
-  // Demo Login: Mock sending OTP
-  Future<bool> sendOtp(String phoneNumber) async {
-    // In production, call NestJS Backend: /auth/send-otp
-    await Future.delayed(const Duration(seconds: 1));
-    return true; // Assume success
-  }
-
-  // Demo Verify: Mock verifying OTP
-  Future<String?> verifyOtp(String phoneNumber, String otp) async {
-    // In production, call NestJS Backend: /auth/verify-otp
-    await Future.delayed(const Duration(seconds: 1));
-    if (otp == '8246') {
-      // Return a dummy JWT token
-      const dummyToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_payload';
-      await saveToken(dummyToken);
-      return dummyToken;
+    try {
+      await _account.deleteSession(sessionId: 'current');
+    } catch (e) {
+      // Session may already be invalid
     }
-    return null;
   }
 }

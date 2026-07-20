@@ -45,5 +45,17 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Appwrite OAuth Deep Linking -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sentra.customer_app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>appwrite-custom-6a5a2ab80012a3e5860a</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
