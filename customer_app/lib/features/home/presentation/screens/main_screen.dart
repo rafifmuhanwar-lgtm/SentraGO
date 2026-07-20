@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../chat/presentation/screens/chat_list_screen.dart';
-import '../../../order/presentation/screens/order_list_screen.dart';
 import 'home_screen.dart';
 import '../../../../features/order/presentation/screens/order_screen.dart';
 import '../../../../features/chat/presentation/screens/chat_screen.dart';
@@ -27,7 +25,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
