@@ -1,0 +1,200 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="sidebar">
+
+    <div class="logo">
+        SentraGO
+        <span>Admin</span>
+    </div>
+
+    <ul>
+
+        <a href="dashboard.html" style="text-decoration: none; color:white;"><li>🏠 Dashboard</li></a>
+        <a href="user.html" style="text-decoration: none; color:white;"><li>👤 User</li></a>
+        <a href="driver.html" style="text-decoration: none; color:white;"><li>🚗 Driver</li></a>
+        <a style="text-decoration: none; color:white;"><li class="active">📦 Pesanan</li></a>
+        <a href="reports.html" style="text-decoration: none; color:white"><li>📈 Laporan</li></a>
+        <a href="setting/adminProfile.html" style="text-decoration: none; color: white;"><li>⚙ Pengaturan</li></a>
+
+    </ul>
+
+</div>
+<div class="main">
+
+    <header>
+        <h2>Order Management</h2>
+
+        <button class="add-order-btn">
+            + Buat Pesanan
+        </button>
+    </header>
+
+    <!-- Order Statistics -->
+    <div class="cards">
+
+        <div class="card">
+            <h3>Total Pesanan</h3>
+            <h1>532</h1>
+        </div>
+
+        <div class="card">
+            <h3>Diproses</h3>
+            <h1>42</h1>
+        </div>
+
+        <div class="card">
+            <h3>Selesai</h3>
+            <h1>468</h1>
+        </div>
+
+        <div class="card">
+            <h3>Dibatalkan</h3>
+            <h1>22</h1>
+        </div>
+
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+
+        <input
+            type="text"
+            placeholder="Cari Pesanan..."
+        >
+
+        <select>
+            <option value="all">Semua Status</option>
+            <option value="process">Diproses</option>
+            <option value="delivery">Dikirim</option>
+            <option value="done">Selesai</option>
+            <option value="cancel">Dibatalkan</option>
+        </select>
+
+    </div>
+
+    <!-- Order Table -->
+    <div class="table">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+                    <th>Pelanggan</th>
+                    <th>Driver</th>
+                    <th>Tujuan</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                    <th>Aksi</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+
+                    <td>#ORD001</td>
+                    <td>Fauzan</td>
+                    <td>Agus</td>
+                    <td>Jakarta</td>
+                    <td>Rp75.000</td>
+
+                    <td>
+                        <span class="status-process">
+                            Diproses
+                        </span>
+                    </td>
+
+                    <td>20 Juli 2026</td>
+
+                    <td class="action">
+
+                        <button class="btn-detail">
+                            Detail
+                        </button>
+
+                        <button class="btn-edit">
+                            Edit
+                        </button>
+
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td>#ORD002</td>
+                    <td>Budi</td>
+                    <td>Rudi</td>
+                    <td>Bekasi</td>
+                    <td>Rp120.000</td>
+
+                    <td>
+                        <span class="status-delivery">
+                            Dikirim
+                        </span>
+                    </td>
+
+                    <td>20 Juli 2026</td>
+
+                    <td class="action">
+
+                        <button class="btn-detail">
+                            Detail
+                        </button>
+
+                        <button class="btn-edit">
+                            Edit
+                        </button>
+
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td>#ORD003</td>
+                    <td>Andi</td>
+                    <td>Yoga</td>
+                    <td>Bandung</td>
+                    <td>Rp210.000</td>
+
+                    <td>
+                        <span class="status-done">
+                            Selesai
+                        </span>
+                    </td>
+
+                    <td>19 Juli 2026</td>
+
+                    <td class="action">
+
+                        <button class="btn-detail">
+                            Detail
+                        </button>
+
+                        <button class="btn-edit">
+                            Edit
+                        </button>
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+    </body>
+</html>

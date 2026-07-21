@@ -1,0 +1,109 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="/style.css">
+    </head>
+    <body>
+        <div class="sidebar">
+
+    <div class="logo">
+        SentraGO
+        <span>Admin</span>
+    </div>
+
+    <ul>
+
+        <a href="/dashboard.html" style="text-decoration: none; color: white;"><li>🏠 Dashboard</li></a>
+        <a href="/user.html" style="text-decoration: none; color:white;"><li>👤 User</li></a>
+        <a href="/driver.html" style="text-decoration: none; color:white;"><li>🚗 Driver</li></a>
+        <a href="/order.html" style="text-decoration: none; color:white;"><li>📦 Pesanan</li></a>
+        <a href="/reports.html" style="text-decoration: none; color:white"><li>📈 Laporan</li></a>
+        <a style="text-decoration: none; color: white;"><li class="active">⚙ Pengaturan</li></a>
+
+    </ul>
+
+</div>
+<div class="main">
+
+    <header>
+
+        <h2>Settings</h2>
+
+        <button class="btn-save">
+            Simpan Perubahan
+        </button>
+
+    </header>
+
+    <div class="settings-container">
+
+        <!-- Sidebar -->
+
+        <div class="settings-menu">
+
+            <a href="adminProfile.html" style="text-decoration: none; color: white;"><button class="setting-item">
+                Profil Admin
+            </button></a>
+
+            <a href="application.html" style="text-decoration: none; color: white;"><button class="setting-item">
+                Aplikasi
+            </button></a>
+
+            <a href="security.html" style="text-decoration: none; color:white;"><button class="setting-item active">
+                Keamanan
+            </button></a>
+
+            <a href="notification.html" style="text-decoration: none; color:white"><button class="setting-item">
+                Notifikasi
+            </button></a>
+
+            <a href="backupDb.html" style="text-decoration: none; color:white;"><button class="setting-item">
+                Backup Database
+            </button></a>
+
+            <a href="about.html" style="text-decoration: none; color:white"><button class="setting-item">
+                Tentang
+            </button></a>
+
+        </div>
+
+        <!-- Content -->
+
+<div class="settings-content">
+
+    <h2>Keamanan</h2>
+
+    <div class="form-group">
+
+        <label>Password Lama</label>
+
+        <input type="password">
+
+    </div>
+
+    <div class="form-group">
+
+        <label>Password Baru</label>
+
+        <input type="password">
+
+    </div>
+
+    <div class="form-group">
+
+        <label>Konfirmasi Password</label>
+
+        <input type="password">
+
+    </div>
+
+    <div class="switch-group">
+
+        <label>Two-Factor Authentication</label>
+
+        <input type="checkbox">
+
+    </div>
+
+</div>
+    </body>
+</html>

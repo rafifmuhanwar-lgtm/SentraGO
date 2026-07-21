@@ -1,0 +1,231 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    
+    <body>
+        <div class="sidebar">
+
+    <div class="logo">
+        SentraGO
+        <span>Admin</span>
+    </div>
+
+    <ul>
+
+        <a href="dashboard.html" style="text-decoration: none; color:white;"><li>🏠 Dashboard</li></a>
+        <a href="user.html" style="text-decoration: none; color:white;"><li>👤 User</li></a>
+        <a href="driver.html" style="text-decoration: none; color:white;"><li>🚗 Driver</li></a>
+        <a href="order.html" style="text-decoration: none; color:white;"><li>📦 Pesanan</li></a>
+        <a style="text-decoration: none; color:white"><li class="active">📈 Laporan</li></a>
+        <a href="setting/adminProfile.html" style="text-decoration: none; color: white;"><li>⚙ Pengaturan</li></a>
+
+    </ul>
+        
+</div>
+<div class="main">
+
+    <header>
+
+        <h2>Report Management</h2>
+
+        <div class="report-action">
+
+            <button class="btn-export-pdf">
+                Export PDF
+            </button>
+
+            <button class="btn-export-excel">
+                Export Excel
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- Filter -->
+
+    <div class="report-filter">
+
+        <div>
+
+            <label>Tanggal Awal</label>
+
+            <input type="date">
+
+        </div>
+
+        <div>
+
+            <label>Tanggal Akhir</label>
+
+            <input type="date">
+
+        </div>
+
+        <button class="btn-filter">
+            Terapkan
+        </button>
+
+    </div>
+
+    <!-- Statistik -->
+
+    <div class="cards">
+
+        <div class="card">
+            <h3>Total Pendapatan</h3>
+            <h1>Rp15.200.000</h1>
+        </div>
+
+        <div class="card">
+            <h3>Total Order</h3>
+            <h1>532</h1>
+        </div>
+
+        <div class="card">
+            <h3>User Baru</h3>
+            <h1>84</h1>
+        </div>
+
+        <div class="card">
+            <h3>Driver Aktif</h3>
+            <h1>321</h1>
+        </div>
+
+    </div>
+
+    <!-- Grafik -->
+
+    <div class="chart-grid">
+
+        <div class="chart">
+            <canvas id="incomeChart"></canvas>
+        </div>
+
+        <div class="chart">
+            <canvas id="orderChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- Driver Terbaik -->
+
+    <div class="table">
+
+        <h3>Top Driver</h3>
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>Nama</th>
+                    <th>Rating</th>
+                    <th>Total Order</th>
+                    <th>Pendapatan</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>Agus</td>
+                    <td>⭐ 4.9</td>
+                    <td>120</td>
+                    <td>Rp4.200.000</td>
+                </tr>
+
+                <tr>
+                    <td>Budi</td>
+                    <td>⭐ 4.8</td>
+                    <td>115</td>
+                    <td>Rp3.800.000</td>
+                </tr>
+
+                <tr>
+                    <td>Yoga</td>
+                    <td>⭐ 4.8</td>
+                    <td>112</td>
+                    <td>Rp3.650.000</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+    <script>
+const incomeChart = new Chart(
+    document.getElementById("incomeChart"),
+    {
+        type: "line",
+        data: {
+            labels: [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "Mei",
+                "Jun",
+                "Jul"
+            ],
+            datasets: [{
+                label: "Pendapatan",
+                data: [
+                    8,
+                    10,
+                    12,
+                    11,
+                    15,
+                    17,
+                    20
+                ],
+                borderColor: "#1F3C88",
+                backgroundColor: "rgba(31,60,136,.2)",
+                fill: true,
+                tension: .4
+            }]
+        }
+    }
+);
+
+const orderChart = new Chart(
+    document.getElementById("orderChart"),
+    {
+        type: "bar",
+        data: {
+            labels: [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "Mei",
+                "Jun",
+                "Jul"
+            ],
+            datasets: [{
+                label: "Order",
+                data: [
+                    120,
+                    160,
+                    190,
+                    175,
+                    210,
+                    245,
+                    280
+                ],
+                borderRadius: 8
+            }]
+        }
+    }
+);
+</script>
+    </body>
+</html>
