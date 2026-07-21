@@ -12,35 +12,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    super.dispose();
-  }
-
-  void _submit() async {
-    final phone = _phoneController.text.trim();
-    if (phone.length < 9) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan nomor HP yang valid')),
-      );
-      return;
-    }
-
-    final success = await ref.read(authStateProvider.notifier).requestOtp(phone);
-    if (success && mounted) {
-      context.push('/otp');
-    } else if (mounted) {
-      final error = ref.read(authStateProvider).errorMessage;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error ?? 'Error')));
-    }
+  void _signInWithGoogle() async {
+    await ref.read(authStateProvider.notifier).signInWithGoogle();
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
       appBar: AppBar(
@@ -62,93 +41,78 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Masukkan nomor HP kamu\nuntuk melanjutkan.',
+                'Pilih cara masuk\nuntuk melanjutkan.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondary,
                       height: 1.5,
                     ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
 
-              // Phone Input
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                      decoration: const BoxDecoration(
-                        border: Border(right: BorderSide(color: AppColors.border)),
-                      ),
-                      child: Text(
-                        '+62',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          hintText: '812-3456-7890',
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 14),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Lanjutkan Button
+              // Google Sign-In Button
               SizedBox(
                 width: double.infinity,
                 height: 52,
-                child: ElevatedButton(
-                  onPressed: authState.status == AuthStatus.loading ? null : _submit,
-                  child: authState.status == AuthStatus.loading
+                child: OutlinedButton.icon(
+                  onPressed: isLoading ? null : _signInWithGoogle,
+                  icon: isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
                         )
-                      : const Text('Lanjutkan'),
+                      : const Icon(Icons.g_mobiledata_rounded, size: 28),
+                  label: Text(isLoading ? 'Memproses...' : 'Lanjutkan dengan Google'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
 
-              // Divider "atau lanjut dengan"
+              // Divider
               Row(
                 children: [
                   const Expanded(child: Divider(color: AppColors.border)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      'atau lanjut dengan',
+                      'atau',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
                   const Expanded(child: Divider(color: AppColors.border)),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // Social Login Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildSocialButton(Icons.g_mobiledata_rounded, 'Google'),
-                  const SizedBox(width: 16),
-                  _buildSocialButton(Icons.apple, 'Apple'),
-                ],
+              // Apple Sign-In (UI only for now)
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Apple Sign-In akan segera hadir')),
+                    );
+                  },
+                  icon: const Icon(Icons.apple, size: 28),
+                  label: const Text('Lanjutkan dengan Apple'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
               ),
 
               const Spacer(),
@@ -187,18 +151,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSocialButton(IconData icon, String label) {
-    return Container(
-      width: 72,
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Icon(icon, size: 28, color: AppColors.textPrimary),
     );
   }
 }

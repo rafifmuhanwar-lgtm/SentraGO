@@ -8,15 +8,17 @@ void main() {
   runApp(const ProviderScope(child: SentraApp()));
 }
 
-class SentraApp extends StatelessWidget {
+class SentraApp extends ConsumerWidget {
   const SentraApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
+
     return MaterialApp.router(
       title: 'Sentra',
       theme: AppTheme.lightTheme,
-      routerConfig: AppRouter.router,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }

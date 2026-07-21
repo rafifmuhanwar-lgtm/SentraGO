@@ -43,6 +43,10 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_secure_storage: ^10.3.1
   pinput: ^6.0.2
+  appwrite: ^16.1.0
+  image_picker: ^1.1.2
+  flutter_web_auth_2: ^3.1.2
+  google_maps_flutter: ^2.14.2
 
 dev_dependencies:
   flutter_test:
@@ -95,3 +99,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+dependency_overrides:
+  flutter_web_auth_2: 5.0.3
