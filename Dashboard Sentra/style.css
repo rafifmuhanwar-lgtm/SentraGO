@@ -15,7 +15,7 @@ background:#f4f7fb;
 
 .sidebar{
 
-width:250px;
+width:320px;
 
 height:100vh;
 
@@ -23,7 +23,7 @@ background:#1F3C88;
 
 color:white;
 
-padding:30px;
+padding:35px;
 
 position:fixed;
 
@@ -31,7 +31,7 @@ position:fixed;
 
 .logo{
 
-font-size:28px;
+font-size:36px;
 
 font-weight:bold;
 
@@ -43,7 +43,7 @@ margin-bottom:40px;
 
 display:block;
 
-font-size:15px;
+font-size:18px;
 
 color:#d9e7ff;
 
@@ -57,33 +57,83 @@ list-style:none;
 
 .sidebar li{
 
-padding:16px;
+padding:18px 16px;
 
-margin-bottom:10px;
+margin-bottom:12px;
 
 border-radius:10px;
 
 cursor:pointer;
 
-transition:.3s;
+transition:.3s ease;
+
+font-size:17px;
+
+letter-spacing:0.3px;
+
+font-weight:500;
+
+position:relative;
+
+}
+
+.sidebar li::before {
+
+content: '';
+
+position: absolute;
+
+left: 0;
+
+top: 50%;
+
+transform: translateY(-50%);
+
+width: 4px;
+
+height: 0;
+
+background: #ffffff;
+
+border-radius: 2px;
+
+transition: .3s ease;
 
 }
 
 .sidebar li:hover{
 
-background:#3566d6;
+background:linear-gradient(135deg, #3566d6 0%, #2d56bd 100%);
+
+transform:translateX(8px);
+
+box-shadow:0 8px 20px rgba(0,0,0,.25);
+
+}
+
+.sidebar li:hover::before {
+
+height: 24px;
 
 }
 
 .active{
 
-background:#4d7ef0;
+background:linear-gradient(135deg, #4d7ef0 0%, #3566d6 100%);
+
+box-shadow:0 8px 20px rgba(0,0,0,.25);
+
+}
+
+.active::before {
+
+height: 24px;
 
 }
 
 .main{
 
-margin-left:250px;
+margin-left:320px;
 
 padding:40px;
 
@@ -105,13 +155,31 @@ margin-bottom:30px;
 
 .admin{
 
-background:white;
+background:linear-gradient(135deg, #1F3C88 0%, #3566d6 100%);
 
-padding:10px 20px;
+padding:12px 30px;
 
-border-radius:20px;
+border-radius:25px;
 
-box-shadow:0 5px 20px rgba(0,0,0,.08);
+box-shadow:0 8px 25px rgba(31,60,136,.25), 0 2px 8px rgba(31,60,136,.15);
+
+color:white;
+
+font-weight:600;
+
+letter-spacing:0.5px;
+
+transition:.3s;
+
+cursor:pointer;
+
+}
+
+.admin:hover{
+
+transform:translateY(-3px);
+
+box-shadow:0 12px 35px rgba(31,60,136,.35), 0 4px 12px rgba(31,60,136,.2);
 
 }
 
@@ -135,7 +203,7 @@ padding:25px;
 
 border-radius:15px;
 
-box-shadow:0 5px 20px rgba(0,0,0,.08);
+box-shadow:0 10px 30px rgba(31,60,136,.25), 0 2px 8px rgba(31,60,136,.15);
 
 transition:.3s;
 
@@ -183,7 +251,11 @@ padding:25px;
 
 border-radius:15px;
 
-box-shadow:0 5px 20px rgba(0,0,0,.08);
+box-shadow:0 10px 30px rgba(31,60,136,.25), 0 2px 8px rgba(31,60,136,.15);
+
+overflow:hidden;
+
+transition:.3s;
 
 }
 
@@ -193,13 +265,19 @@ width:100%;
 
 border-collapse:collapse;
 
+border-radius:15px;
+
+overflow:hidden;
+
 }
 
 th,td{
 
-padding:15px;
+padding:16px 15px;
 
 text-align:left;
+
+border:none;
 
 }
 
@@ -213,7 +291,15 @@ color:white;
 
 tr:nth-child(even){
 
-background:#f7f7f7;
+background:#f9fafb;
+
+}
+
+tr:hover{
+
+background:#f0f4ff;
+
+transition:.2s;
 
 }
 
@@ -262,6 +348,31 @@ header p {
 .toolbar-right {
     display: flex;
     gap: 12px;
+}
+
+.toolbar-right select {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    color: #1F3C88;
+    border: 2px solid #e8ecf5;
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: .3s;
+    font-weight: 500;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(31,60,136,.1);
+}
+
+.toolbar-right select:hover {
+    border-color: #3566d6;
+    box-shadow: 0 6px 18px rgba(31,60,136,.15);
+    transform: translateY(-2px);
+}
+
+.toolbar-right select:focus {
+    outline: none;
+    border-color: #1F3C88;
+    box-shadow: 0 8px 24px rgba(31,60,136,.2);
 }
 
 .table-header {
@@ -317,6 +428,31 @@ header p {
 .active-page {
     background: #1F3C88 !important;
     color: white;
+}
+
+/* user.html */
+
+.add-user-btn {
+    background: linear-gradient(135deg, #1F3C88 0%, #3566d6 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 32px;
+    cursor: pointer;
+    transition: .3s;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 8px 25px rgba(31,60,136,.25), 0 2px 8px rgba(31,60,136,.15);
+}
+
+.add-user-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(31,60,136,.35), 0 4px 12px rgba(31,60,136,.2);
+}
+
+.add-user-btn:active {
+    transform: translateY(-1px);
 }
 
 /* driver.html */
