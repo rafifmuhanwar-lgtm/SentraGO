@@ -4,8 +4,8 @@ enum MessageStatus { sent, delivered, read }
 
 class ChatMessageModel {
   final String id;
-  final String roomId;
-  final String text;
+  final String roomId; // Appwrite orderId
+  final String text; // Appwrite message
   final DateTime timestamp;
   final bool isMine;
   final MessageStatus status;
@@ -49,5 +49,28 @@ class ChatMessageModel {
       messageType: messageType ?? this.messageType,
       mediaUrl: mediaUrl ?? this.mediaUrl,
     );
+  }
+
+  factory ChatMessageModel.fromJson(Map<String, dynamic> json, String currentUserId) {
+    return ChatMessageModel(
+      id: json['\$id'] ?? json['id'] ?? '',
+      roomId: json['orderId'] ?? '',
+      text: json['message'] ?? '',
+      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
+      isMine: json['senderId'] == currentUserId,
+      status: MessageStatus.read, // default from DB
+      messageType: MessageType.text,
+      mediaUrl: null,
+    );
+  }
+
+  Map<String, dynamic> toJson(String currentUserId, String currentUserName) {
+    return {
+      'orderId': roomId,
+      'senderId': currentUserId,
+      'senderName': currentUserName,
+      'message': text,
+      'timestamp': timestamp.toIso8601String(),
+    };
   }
 }

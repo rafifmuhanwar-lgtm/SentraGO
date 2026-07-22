@@ -162,7 +162,133 @@ Setelah project terbentuk, kamu akan masuk ke halaman **Overview** project.
 5. Buat index:
    - Index `by_order`: `orderId` (ASC), status `Enabled`
 
-> ✅ Database dan collections siap!
+> ✅ Database utama dan chat siap!
+
+### 5.5 Buat Collection: `addresses` (Fase 3 - Profil)
+1. Klik **"Create Collection"**
+2. Isi:
+   - **Collection Name:** `addresses`
+   - **Collection ID:** `addresses`
+3. Klik **"Create"**
+4. Buat attributes:
+
+| Attribute | Type | Required | Default |
+|-----------|------|----------|---------|
+| `userId` | string | ✅ Yes | (kosong) |
+| `label` | string | ✅ Yes | (kosong) |
+| `recipientName` | string | ✅ Yes | (kosong) |
+| `phone` | string | ✅ Yes | (kosong) |
+| `fullAddress` | string | ✅ Yes | (kosong) |
+| `details` | string | ❌ No | (kosong) |
+| `isPrimary` | boolean | ✅ Yes | `false` |
+
+5. Buat index:
+   - Index `by_user`: `userId` (ASC), status `Enabled`
+
+### 5.6 Buat Collection: `payment_methods` (Fase 3 - Profil)
+1. Klik **"Create Collection"**
+2. Isi:
+   - **Collection Name:** `payment_methods`
+   - **Collection ID:** `payment_methods`
+3. Klik **"Create"**
+4. Buat attributes:
+
+| Attribute | Type | Required | Default |
+|-----------|------|----------|---------|
+| `userId` | string | ✅ Yes | (kosong) |
+| `name` | string | ✅ Yes | (kosong) |
+| `type` | string | ✅ Yes | (kosong) |
+| `accountNumber` | string | ❌ No | (kosong) |
+| `balance` | double | ❌ No | (kosong) |
+| `isLinked` | boolean | ✅ Yes | `false` |
+| `isDefault` | boolean | ✅ Yes | `false` |
+
+5. Buat index:
+   - Index `by_user`: `userId` (ASC), status `Enabled`
+
+### 5.7 Buat Collection: `sentrapay_wallets`
+
+1. Klik **"Create Collection"**
+2. Isi:
+   - **Collection Name:** `sentrapay_wallets`
+   - **Collection ID:** `sentrapay_wallets`
+3. Klik **"Create"**
+4. Buat attributes:
+
+| Attribute | Type | Required | Default |
+|-----------|------|----------|---------|
+| `userId` | string | ✅ Yes | (kosong) |
+| `balance` | double | ✅ Yes | `0` |
+| `totalTopUp` | double | ❌ No | `0` |
+| `totalSpent` | double | ❌ No | `0` |
+| `createdAt` | string | ❌ No | (kosong) |
+| `updatedAt` | string | ❌ No | (kosong) |
+
+### 5.8 Buat Collection: `escrow_transactions`
+
+1. Klik **"Create Collection"**
+2. Isi:
+   - **Collection Name:** `escrow_transactions`
+   - **Collection ID:** `escrow_transactions`
+3. Klik **"Create"**
+4. Buat attributes:
+
+| Attribute | Type | Required | Default |
+|-----------|------|----------|---------|
+| `orderId` | string | ✅ Yes | (kosong) |
+| `userId` | string | ✅ Yes | (kosong) |
+| `amount` | double | ✅ Yes | `0` |
+| `status` | string | ✅ Yes | `held` |
+| `serviceType` | string | ✅ Yes | (kosong) |
+| `createdAt` | string | ❌ No | (kosong) |
+| `releasedAt` | string | ❌ No | (kosong) |
+
+5. Buat index:
+   - Index `by_user`: `userId` (ASC), status `Enabled`
+   - Index `by_order`: `orderId` (ASC), status `Enabled`
+
+### 5.9 Buat Collection: `topup_transactions`
+
+1. Klik **"Create Collection"**
+2. Isi:
+   - **Collection Name:** `topup_transactions`
+   - **Collection ID:** `topup_transactions`
+3. Klik **"Create"**
+4. Buat attributes:
+
+| Attribute | Type | Required | Default |
+|-----------|------|----------|---------|
+| `userId` | string | ✅ Yes | (kosong) |
+| `amount` | double | ✅ Yes | `0` |
+| `paymentMethod` | string | ✅ Yes | (kosong) |
+| `pakasirOrderId` | string | ❌ No | (kosong) |
+| `status` | string | ✅ Yes | `pending` |
+| `createdAt` | string | ❌ No | (kosong) |
+| `completedAt` | string | ❌ No | (kosong) |
+
+5. Buat index:
+   - Index `by_user`: `userId` (ASC), status `Enabled`
+
+### 5.10 Buat Collection: `promos` (Fase 4 - Konten Home)
+1. Klik **"Create Collection"**
+2. Isi:
+   - **Collection Name:** `promos`
+   - **Collection ID:** `promos`
+3. Klik **"Create"**
+4. Buat attributes:
+
+| Attribute | Type | Required | Default |
+|-----------|------|----------|---------|
+| `title` | string | ✅ Yes | (kosong) |
+| `description` | string | ✅ Yes | (kosong) |
+| `code` | string | ✅ Yes | (kosong) |
+
+*(Opsional)* Anda dapat membuat 1 dokumen promo di console untuk dites, misalnya:
+- title: `Gratis Ongkir`
+- description: `Hingga 10rb untuk pengguna baru`
+- code: `TITIPDB`
+
+> ✅ Semua Database dan Collections (termasuk Profil dan Promo) siap!
 
 ---
 

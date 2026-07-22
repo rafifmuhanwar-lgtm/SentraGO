@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/wallet/presentation/screens/topup_screen.dart';
 import '../../features/location/presentation/screens/location_selection_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
@@ -8,12 +9,15 @@ import '../../features/home/presentation/screens/main_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_form_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_summary_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_success_screen.dart';
+import '../../features/jastip/presentation/screens/delivery_address_screen.dart';
 import '../../features/chat/presentation/screens/chat_room_screen.dart';
 import '../../features/chat/domain/models/chat_room_model.dart';
 import '../../features/order/presentation/screens/order_detail_screen.dart';
+import '../../features/order/presentation/screens/courier_receipt_screen.dart';
 import '../../features/order/domain/models/order_model.dart';
 import '../../features/tracking/presentation/screens/tracking_screen.dart';
 import '../../features/suruh/presentation/screens/suruh_form_screen.dart';
+import '../../features/suruh/presentation/screens/suruh_summary_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/saved_addresses_screen.dart';
 import '../../features/profile/presentation/screens/payment_methods_screen.dart';
@@ -22,7 +26,7 @@ import '../../features/profile/presentation/screens/about_app_screen.dart';
 import '../../features/profile/presentation/screens/notifications_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authStatus = ref.watch(authStateProvider.select((s) => s.status));
 
   return GoRouter(
     initialLocation: '/',
@@ -39,12 +43,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isLocation) return null;
 
       // If authenticated and on login, go to main
-      if (authState.status == AuthStatus.authenticated && isLogin) {
+      if (authStatus == AuthStatus.authenticated && isLogin) {
         return '/main';
       }
 
       // If unauthenticated and not on an auth route, redirect to login
-      if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
+      if (authStatus == AuthStatus.unauthenticated && !isAuthRoute) {
         return '/login';
       }
 
@@ -83,6 +87,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const JastipSuccessScreen(),
       ),
       GoRoute(
+        path: '/jastip/delivery-address',
+        builder: (context, state) => const DeliveryAddressScreen(),
+      ),
+      GoRoute(
         path: '/chat/room',
         builder: (context, state) {
           final room = state.extra as ChatRoomModel;
@@ -97,12 +105,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/order/courier-receipt',
+        builder: (context, state) {
+          final order = state.extra as OrderModel;
+          return CourierReceiptScreen(order: order);
+        },
+      ),
+      GoRoute(
         path: '/tracking',
-        builder: (context, state) => const TrackingScreen(),
+        builder: (context, state) {
+          final order = state.extra as OrderModel;
+          return TrackingScreen(order: order);
+        },
       ),
       GoRoute(
         path: '/suruh',
         builder: (context, state) => const SuruhFormScreen(),
+      ),
+      GoRoute(
+        path: '/suruh/summary',
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>? ?? {};
+          return SuruhSummaryScreen(data: data);
+        },
       ),
       GoRoute(
         path: '/profile/edit',
@@ -127,6 +152,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/wallet/topup',
+        builder: (context, state) => const TopUpScreen(),
       ),
     ],
   );

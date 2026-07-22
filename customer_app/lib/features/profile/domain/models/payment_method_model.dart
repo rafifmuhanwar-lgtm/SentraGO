@@ -39,7 +39,7 @@ class PaymentMethodModel {
 
   factory PaymentMethodModel.fromJson(Map<String, dynamic> json) {
     return PaymentMethodModel(
-      id: json['id'] as String? ?? '',
+      id: json['\$id'] ?? json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       type: json['type'] as String? ?? 'cash',
       accountNumber: json['accountNumber'] as String?,
@@ -51,7 +51,6 @@ class PaymentMethodModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'name': name,
       'type': type,
       'accountNumber': accountNumber,

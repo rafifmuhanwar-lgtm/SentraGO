@@ -19,4 +19,14 @@ class AppConfig {
   // Appwrite OAuth Redirect URLs
   static const String oauthSuccessRedirect = 'appwrite-custom-6a5a2ab80012a3e5860a://success';
   static const String oauthFailureRedirect = 'appwrite-custom-6a5a2ab80012a3e5860a://failure';
+
+  // ── Pakasir Payment Gateway ──
+  // TODO: Ganti dengan API Key dan Slug dari Pakasir Dashboard
+  static const String pakasirBaseUrl = 'https://app.pakasir.com';
+  static const String pakasirProjectSlug = 'sentrago'; // dari halaman Project
+  static const String pakasirApiKey = 'NOZxCGsEnU4CA7kQD9snZnJM0E34EKsh'; // dari halaman Project
+
+  // ── Mapbox ──
+  // Token dibaca dari --dart-define=MAPBOX_ACCESS_TOKEN=...
+  static const String mapboxAccessToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN', defaultValue: '');
 }

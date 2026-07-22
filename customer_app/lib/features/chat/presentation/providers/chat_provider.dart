@@ -1,4 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:appwrite/appwrite.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../../core/services/appwrite_client.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/chat_room_model.dart';
 import '../../domain/models/chat_message_model.dart';
 import '../../data/repositories/chat_repository.dart';
@@ -38,6 +42,7 @@ final chatRoomMessagesProvider =
 class ChatRoomMessagesNotifier extends Notifier<List<ChatMessageModel>> {
   final String arg;
   late final ChatRepository _repository;
+  RealtimeSubscription? _subscription;
 
   ChatRoomMessagesNotifier(this.arg);
 
@@ -45,7 +50,34 @@ class ChatRoomMessagesNotifier extends Notifier<List<ChatMessageModel>> {
   List<ChatMessageModel> build() {
     _repository = ref.watch(chatRepositoryProvider);
     Future.microtask(() => loadMessages());
+    _setupRealtime();
+    
+    ref.onDispose(() {
+      _subscription?.close();
+    });
     return [];
+  }
+
+  void _setupRealtime() {
+    if (arg == 'room_cs') return;
+    
+    final realtime = ref.read(realtimeProvider);
+    final userId = ref.read(authStateProvider).user?.id ?? '';
+    
+    _subscription = realtime.subscribe(['databases.${AppConfig.appwriteDatabaseId}.collections.${AppConfig.chatsCollection}.documents']);
+    
+    _subscription!.stream.listen((response) {
+      if (response.events.contains('databases.*.collections.*.documents.*.create')) {
+        final data = response.payload;
+        if (data['orderId'] == arg && data['senderId'] != userId) {
+          final newMsg = ChatMessageModel.fromJson(data, userId);
+          // Check if not already in state
+          if (!state.any((m) => m.id == newMsg.id)) {
+            state = [...state, newMsg];
+          }
+        }
+      }
+    });
   }
 
   Future<void> loadMessages() async {

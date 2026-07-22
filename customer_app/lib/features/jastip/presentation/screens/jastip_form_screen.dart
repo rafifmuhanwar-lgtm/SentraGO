@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/photo_picker_tile.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../profile/domain/models/address_model.dart';
+import '../../domain/models/pickup_location_data.dart';
+import 'widgets/map_picker_sheet.dart';
 
 class JastipFormScreen extends StatefulWidget {
   const JastipFormScreen({super.key});
@@ -15,9 +21,11 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
   final _itemController = TextEditingController();
   final _budgetController = TextEditingController();
   final _notesController = TextEditingController();
-  
-  String? _pickupAddress;
+
+  PickupLocationData? _pickupLocation;
+  String? _itemImageUrl;
   String? _dropoffAddress;
+  AddressModel? _dropoffAddressData;
 
   @override
   void dispose() {
@@ -34,7 +42,7 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
       );
       return;
     }
-    if (_pickupAddress == null || _dropoffAddress == null) {
+    if (_pickupLocation == null || _dropoffAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lokasi Pembelian dan Pengiriman harus dipilih')),
       );
@@ -47,29 +55,38 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
       'item': _itemController.text,
       'budget': budgetRaw,
       'notes': _notesController.text,
-      'pickup': _pickupAddress,
+      'pickup': _pickupLocation!.address,
+      'pickupLat': _pickupLocation!.lat,
+      'pickupLng': _pickupLocation!.lng,
       'dropoff': _dropoffAddress,
+      'dropoffData': _dropoffAddressData?.toJson(),
     });
   }
 
-  void _showMapPicker(String title, bool isPickup) {
-    showModalBottomSheet(
+  Future<void> _pickPickupLocation() async {
+    final result = await showModalBottomSheet<PickupLocationData>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _MapPickerSheet(
-        title: title,
-        onSelected: (address) {
-          setState(() {
-            if (isPickup) {
-              _pickupAddress = address;
-            } else {
-              _dropoffAddress = address;
-            }
-          });
-        },
-      ),
+      builder: (context) => const MapPickerSheet(),
     );
+
+    if (result != null) {
+      setState(() {
+        _pickupLocation = result;
+      });
+    }
+  }
+
+  Future<void> _pickDropoffAddress() async {
+    final result = await context.push<AddressModel>('/jastip/delivery-address');
+
+    if (result != null) {
+      setState(() {
+        _dropoffAddress = result.fullAddress;
+        _dropoffAddressData = result;
+      });
+    }
   }
 
   @override
@@ -101,12 +118,12 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
                   const SizedBox(height: 12),
                   _buildItemInput(),
                   const SizedBox(height: 28),
-                  
+
                   _buildSectionTitle('Lokasi Pembelian & Pengiriman'),
                   const SizedBox(height: 12),
                   _buildLocationCard(),
                   const SizedBox(height: 28),
-                  
+
                   _buildSectionTitle('Estimasi Harga Barang'),
                   const SizedBox(height: 8),
                   const Text(
@@ -116,7 +133,7 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
                   const SizedBox(height: 12),
                   _buildBudgetInput(),
                   const SizedBox(height: 28),
-                  
+
                   _buildSectionTitle('Catatan Tambahan (Opsional)'),
                   const SizedBox(height: 12),
                   _buildNotesInput(),
@@ -172,37 +189,12 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
             ),
           ),
           const Divider(height: 1, color: AppColors.border),
-          InkWell(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur kamera akan segera hadir')),
-              );
+          PhotoPickerTile(
+            imageUrl: _itemImageUrl,
+            hintText: 'Tambah Foto Barang',
+            onImagePicked: (path) {
+              setState(() => _itemImageUrl = path);
             },
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.add_a_photo_outlined, size: 18, color: AppColors.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Tambah Foto Barang',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -225,29 +217,30 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
       ),
       child: Column(
         children: [
-          // Simulated Map Preview Background
+          // Map Preview (static decorative)
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: Container(
               height: 100,
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-              ),
+              color: const Color(0xFFE8E0D8),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(-6.200000, 106.816666),
-                      zoom: 14.0,
+                  FlutterMap(
+                    options: const MapOptions(
+                      initialCenter: LatLng(-6.200000, 106.816666),
+                      initialZoom: 14.0,
                     ),
-                    mapType: MapType.normal,
-                    zoomControlsEnabled: false,
-                    scrollGesturesEnabled: false,
-                    zoomGesturesEnabled: false,
-                    tiltGesturesEnabled: false,
-                    rotateGesturesEnabled: false,
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}',
+                        additionalOptions: const {
+                          'accessToken': AppConfig.mapboxAccessToken,
+                        },
+                        userAgentPackageName: 'com.sentrago.customer_app',
+                      ),
+                    ],
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -274,6 +267,7 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
               ),
             ),
           ),
+
           // Location Selectors
           Padding(
             padding: const EdgeInsets.all(16),
@@ -306,9 +300,9 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
                     children: [
                       _buildLocationTile(
                         title: 'Lokasi Pembelian',
-                        value: _pickupAddress,
+                        value: _pickupLocation?.address,
                         hint: 'Tentukan lokasi toko/warung',
-                        onTap: () => _showMapPicker('Lokasi Pembelian', true),
+                        onTap: _pickPickupLocation,
                       ),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
@@ -317,8 +311,8 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
                       _buildLocationTile(
                         title: 'Alamat Pengantaran',
                         value: _dropoffAddress,
-                        hint: 'Tentukan alamat tujuan',
-                        onTap: () => _showMapPicker('Alamat Pengantaran', false),
+                        hint: 'Pilih alamat tujuan',
+                        onTap: _pickDropoffAddress,
                       ),
                     ],
                   ),
@@ -357,7 +351,7 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
                       fontWeight: value != null ? FontWeight.w600 : FontWeight.normal,
                       color: value != null ? AppColors.textPrimary : AppColors.textSecondary.withValues(alpha: 0.5),
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -499,7 +493,8 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
   }
 }
 
-// Custom Currency Formatter
+// ─── Currency Input Formatter ───
+
 class _CurrencyInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
@@ -522,210 +517,5 @@ class _CurrencyInputFormatter extends TextInputFormatter {
   }
 }
 
-// Custom Currency Formatter mock map picking
-class _MapPickerSheet extends StatefulWidget {
-  final String title;
-  final Function(String) onSelected;
 
-  const _MapPickerSheet({required this.title, required this.onSelected});
-
-  @override
-  State<_MapPickerSheet> createState() => _MapPickerSheetState();
-}
-
-class _MapPickerSheetState extends State<_MapPickerSheet> {
-  final _searchController = TextEditingController();
-  GoogleMapController? _mapController;
-  bool _isMoving = false;
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-          // Search Box
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Cari alamat atau nama tempat...',
-                  border: InputBorder.none,
-                  icon: const Icon(Icons.search, color: AppColors.textSecondary),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
-                    onPressed: () => _searchController.clear(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Map Area (Mock)
-          Expanded(
-            child: Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(-6.200000, 106.816666),
-                    zoom: 15.0,
-                  ),
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                  onCameraMoveStarted: () {
-                    if (!_isMoving) {
-                      setState(() => _isMoving = true);
-                    }
-                  },
-                  onCameraIdle: () {
-                    if (_isMoving) {
-                      setState(() => _isMoving = false);
-                    }
-                  },
-                  zoomControlsEnabled: false,
-                  myLocationButtonEnabled: false,
-                ),
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(12),
-                        margin: EdgeInsets.only(bottom: _isMoving ? 20 : 0),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              spreadRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.location_on, color: Colors.white, size: 32),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text('Geser peta untuk menentukan titik', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      )
-                    ],
-                  ),
-                ),
-                Positioned(
-                  bottom: 24,
-                  right: 24,
-                  child: FloatingActionButton(
-                    backgroundColor: Colors.white,
-                    child: const Icon(Icons.my_location, color: AppColors.primary),
-                    onPressed: () {
-                      _mapController?.animateCamera(
-                        CameraUpdate.newLatLngZoom(const LatLng(-6.200000, 106.816666), 15.0),
-                      );
-                    },
-                  ),
-                )
-              ],
-            ),
-          ),
-          // Confirm Button
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Lokasi terpilih:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                const SizedBox(height: 4),
-                Text(
-                  _searchController.text.isNotEmpty ? _searchController.text : 'Jl. Merdeka Raya No. 45, Jakarta Pusat',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final addr = _searchController.text.isNotEmpty ? _searchController.text : 'Jl. Merdeka Raya No. 45, Jakarta Pusat';
-                      widget.onSelected(addr);
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Konfirmasi Lokasi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ─── End of file ───

@@ -1,0 +1,37 @@
+name: courier_app
+description: "SentraGO Courier App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.3.2
+  google_fonts: ^8.1.0
+  go_router: ^17.2.3
+  dio: ^5.10.0
+  appwrite: ^16.1.0
+  image_picker: ^1.1.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.2
+  flutter_web_auth_2: ^3.1.2
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+dependency_overrides:
+  flutter_web_auth_2: 5.0.3

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../order/domain/models/order_model.dart';
 
 class JastipSuccessScreen extends StatelessWidget {
   const JastipSuccessScreen({super.key});
@@ -41,23 +40,8 @@ class JastipSuccessScreen extends StatelessWidget {
               const Spacer(),
               ElevatedButton(
                 onPressed: () {
-                  final mockOrder = OrderModel(
-                    id: 'Jastip #1024',
-                    serviceName: 'Jastip SentraGO',
-                    title: 'Sate Ayam H. Mamat',
-                    description: '10 tusuk sate ayam + lontong + kerupuk. Catatan: bumbu kacang dipisah & jangan pedas.',
-                    status: OrderStatus.ongoing,
-                    statusText: 'Sedang Dibelikan Kurir',
-                    createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
-                    totalAmount: 35000,
-                    courierName: 'Budi',
-                    courierPhone: '081234567890',
-                    courierAvatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=150',
-                    pickupAddress: 'Restoran Sate H. Mamat, Blok A No. 12',
-                    deliveryAddress: 'Jl. Sudirman No. 45, Apartemen Sentra Tower Lt. 12',
-                    chatRoomId: 'room_1',
-                  );
-                  context.push('/order/detail', extra: mockOrder);
+                  // Navigate to orders tab in main screen (assuming index 1)
+                  context.go('/main');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.surface,

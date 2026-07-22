@@ -39,7 +39,7 @@ class AddressModel {
 
   factory AddressModel.fromJson(Map<String, dynamic> json) {
     return AddressModel(
-      id: json['id'] as String? ?? '',
+      id: json['\$id'] ?? json['id'] as String? ?? '',
       label: json['label'] as String? ?? 'Rumah',
       recipientName: json['recipientName'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
@@ -51,7 +51,6 @@ class AddressModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'label': label,
       'recipientName': recipientName,
       'phone': phone,

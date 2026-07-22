@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/database_service.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/payment_method_model.dart';
 
 final paymentMethodsProvider =
@@ -7,128 +9,150 @@ final paymentMethodsProvider =
 });
 
 class PaymentMethodsNotifier extends Notifier<List<PaymentMethodModel>> {
+  final List<PaymentMethodModel> _availableMethods = [
+    const PaymentMethodModel(
+      id: 'sentrapay',
+      name: 'SentraPay Wallet',
+      type: 'wallet',
+      balance: 150000.0,
+      isLinked: true,
+      isDefault: true,
+    ),
+    const PaymentMethodModel(id: 'gopay', name: 'GoPay', type: 'ewallet', isLinked: false, isDefault: false),
+    const PaymentMethodModel(id: 'ovo', name: 'OVO', type: 'ewallet', isLinked: false, isDefault: false),
+    const PaymentMethodModel(id: 'dana', name: 'DANA', type: 'ewallet', isLinked: false, isDefault: false),
+    const PaymentMethodModel(id: 'shopeepay', name: 'ShopeePay', type: 'ewallet', isLinked: false, isDefault: false),
+    const PaymentMethodModel(id: 'bca_va', name: 'BCA Virtual Account', type: 'bank', isLinked: false, isDefault: false),
+    const PaymentMethodModel(id: 'mandiri_va', name: 'Mandiri Virtual Account', type: 'bank', isLinked: false, isDefault: false),
+    const PaymentMethodModel(id: 'cash', name: 'Tunai / COD', type: 'cash', isLinked: true, isDefault: false),
+  ];
+
   @override
   List<PaymentMethodModel> build() {
-    return [
-      const PaymentMethodModel(
-        id: 'sentrapay',
-        name: 'SentraPay Wallet',
-        type: 'wallet',
-        balance: 150000.0,
-        isLinked: true,
-        isDefault: true,
-      ),
-      const PaymentMethodModel(
-        id: 'gopay',
-        name: 'GoPay',
-        type: 'ewallet',
-        accountNumber: '081234567890',
-        balance: 45000.0,
-        isLinked: true,
-        isDefault: false,
-      ),
-      const PaymentMethodModel(
-        id: 'ovo',
-        name: 'OVO',
-        type: 'ewallet',
-        isLinked: false,
-        isDefault: false,
-      ),
-      const PaymentMethodModel(
-        id: 'dana',
-        name: 'DANA',
-        type: 'ewallet',
-        isLinked: false,
-        isDefault: false,
-      ),
-      const PaymentMethodModel(
-        id: 'shopeepay',
-        name: 'ShopeePay',
-        type: 'ewallet',
-        isLinked: false,
-        isDefault: false,
-      ),
-      const PaymentMethodModel(
-        id: 'bca_va',
-        name: 'BCA Virtual Account',
-        type: 'bank',
-        accountNumber: '88019283741092',
-        isLinked: true,
-        isDefault: false,
-      ),
-      const PaymentMethodModel(
-        id: 'mandiri_va',
-        name: 'Mandiri Virtual Account',
-        type: 'bank',
-        isLinked: false,
-        isDefault: false,
-      ),
-      const PaymentMethodModel(
-        id: 'cash',
-        name: 'Tunai / COD',
-        type: 'cash',
-        isLinked: true,
-        isDefault: false,
-      ),
-    ];
+    Future.microtask(() => loadPaymentMethods());
+    return _availableMethods; // return initial list while loading
   }
 
-  void setDefaultPayment(String id) {
-    state = state.map((item) {
-      if (item.id == id && item.isLinked) {
-        return item.copyWith(isDefault: true);
-      }
-      return item.copyWith(isDefault: false);
-    }).toList();
-  }
+  Future<void> loadPaymentMethods() async {
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
 
-  void linkPaymentMethod(String id, String accountNumber) {
-    state = state.map((item) {
-      if (item.id == id) {
-        // Berikan saldo simulasi awal jika ewallet
-        final simBalance = item.type == 'ewallet' ? 50000.0 : null;
-        return item.copyWith(
-          isLinked: true,
-          accountNumber: accountNumber,
-          balance: simBalance,
-        );
+    final db = ref.read(databaseServiceProvider);
+    final docs = await db.getUserPaymentMethods(userId);
+    
+    if (docs.isEmpty) {
+      // First time, save SentraPay and Cash as defaults for this user
+      for (var pm in _availableMethods.where((p) => p.isLinked)) {
+        final data = pm.toJson();
+        data['userId'] = userId;
+        await db.savePaymentMethod(pm.id, data);
       }
-      return item;
-    }).toList();
-  }
-
-  void unlinkPaymentMethod(String id) {
-    final wasDefault = state.any((item) => item.id == id && item.isDefault);
-
-    state = state.map((item) {
-      if (item.id == id) {
-        return item.copyWith(
-          isLinked: false,
-          isDefault: false,
-          accountNumber: null,
-          balance: null,
-        );
-      }
-      return item;
-    }).toList();
-
-    // Jika yang diputuskan adalah default, jadikan SentraPay atau item pertama yang terhubung sebagai default
-    if (wasDefault) {
-      final linkedItems = state.where((item) => item.isLinked).toList();
-      if (linkedItems.isNotEmpty) {
-        final firstLinkedId = linkedItems.first.id;
-        setDefaultPayment(firstLinkedId);
-      }
+      state = _availableMethods;
+    } else {
+      // Merge saved methods with available methods
+      final savedMethods = docs.map((d) => PaymentMethodModel.fromJson(d)).toList();
+      state = _availableMethods.map((avail) {
+        try {
+          return savedMethods.firstWhere((s) => s.id == avail.id);
+        } catch (_) {
+          return avail;
+        }
+      }).toList();
     }
   }
 
-  void topUpBalance(String id, double amount) {
-    state = state.map((item) {
-      if (item.id == id) {
-        final currentBal = item.balance ?? 0.0;
-        return item.copyWith(balance: currentBal + amount);
+  Future<void> setDefaultPayment(String id) async {
+    final target = state.firstWhere((a) => a.id == id);
+    if (!target.isLinked) return;
+    
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+    final db = ref.read(databaseServiceProvider);
+
+    for (var pm in state) {
+      if (pm.isDefault && pm.id != id) {
+        final updated = pm.copyWith(isDefault: false);
+        final data = updated.toJson();
+        data['userId'] = userId;
+        await db.savePaymentMethod(pm.id, data);
       }
-      return item;
-    }).toList();
+    }
+
+    final newDefault = target.copyWith(isDefault: true);
+    final data = newDefault.toJson();
+    data['userId'] = userId;
+    await db.savePaymentMethod(newDefault.id, data);
+
+    await loadPaymentMethods();
+  }
+
+  Future<void> linkPaymentMethod(String id, String accountNumber) async {
+    final target = state.firstWhere((a) => a.id == id);
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+    
+    final db = ref.read(databaseServiceProvider);
+    final simBalance = target.type == 'ewallet' ? 50000.0 : null;
+    
+    final linked = target.copyWith(
+      isLinked: true,
+      accountNumber: accountNumber,
+      balance: simBalance,
+    );
+    
+    final data = linked.toJson();
+    data['userId'] = userId;
+    await db.savePaymentMethod(linked.id, data);
+    
+    await loadPaymentMethods();
+  }
+
+  Future<void> unlinkPaymentMethod(String id) async {
+    final target = state.firstWhere((a) => a.id == id);
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+    
+    final db = ref.read(databaseServiceProvider);
+    
+    final unlinked = target.copyWith(
+      isLinked: false,
+      isDefault: false,
+      accountNumber: null,
+      balance: null,
+    );
+    
+    // We could delete from DB or just update it
+    await db.savePaymentMethod(unlinked.id, unlinked.toJson()..['userId'] = userId);
+    
+    if (target.isDefault) {
+      final otherLinked = state.where((p) => p.isLinked && p.id != id).toList();
+      if (otherLinked.isNotEmpty) {
+        await setDefaultPayment(otherLinked.first.id);
+      }
+    } else {
+      await loadPaymentMethods();
+    }
+  }
+
+  Future<void> topUpBalance(String id, double amount) async {
+    final target = state.firstWhere((a) => a.id == id);
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+    
+    final db = ref.read(databaseServiceProvider);
+    
+    final currentBal = target.balance ?? 0.0;
+    final updated = target.copyWith(balance: currentBal + amount);
+    
+    final data = updated.toJson();
+    data['userId'] = userId;
+    await db.savePaymentMethod(updated.id, data);
+    
+    await loadPaymentMethods();
   }
 }

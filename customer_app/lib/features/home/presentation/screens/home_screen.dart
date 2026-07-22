@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../order/domain/models/order_model.dart';
+import '../../../order/presentation/providers/order_provider.dart';
+import '../providers/promo_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -148,70 +151,78 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // ── Active Order Tracker Widget ──
-            _buildActiveOrderTracker(context),
+            _buildActiveOrderTracker(context, ref),
             const SizedBox(height: 24),
 
             // ── Promo Banner ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryDark,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Gratis Ongkir',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Hingga 10rb\nuntuk pengguna baru',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'KODE: TITIPDB',
-                              style: TextStyle(
-                                color: AppColors.primaryDark,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+            ref.watch(promosProvider).when(
+              data: (promos) {
+                if (promos.isEmpty) return const SizedBox.shrink();
+                final promo = promos.first; // Or use a PageView for multiple promos
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                promo.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 4),
+                              Text(
+                                promo.description,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'KODE: ${promo.code}',
+                                  style: const TextStyle(
+                                    color: AppColors.primaryDark,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        // Courier illustration in promo
+                        Image.asset(
+                          'assets/images/courier_scooter.png',
+                          height: 80,
+                          fit: BoxFit.contain,
+                        ),
+                      ],
                     ),
-                    // Courier illustration in promo
-                    Image.asset(
-                      'assets/images/courier_scooter.png',
-                      height: 80,
-                      fit: BoxFit.contain,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => const SizedBox.shrink(),
             ),
             const SizedBox(height: 28),
 
@@ -300,7 +311,16 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActiveOrderTracker(BuildContext context) {
+  Widget _buildActiveOrderTracker(BuildContext context, WidgetRef ref) {
+    final orders = ref.watch(ordersProvider);
+    final activeOrders = orders.where((o) => o.status == OrderStatus.ongoing).toList();
+    
+    if (activeOrders.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final activeOrder = activeOrders.first;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
@@ -342,9 +362,9 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Text(
-                        'PESANAN BERLANGSUNG',
-                        style: TextStyle(
+                      Text(
+                        activeOrder.statusText.toUpperCase(),
+                        style: const TextStyle(
                           color: Color(0xFF2E7D32),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -354,7 +374,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 const Text(
-                  'Estimasi 12 Mnt',
+                  'Sedang Proses',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -372,27 +392,33 @@ class HomeScreen extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.delivery_dining_rounded, color: AppColors.primary, size: 24),
+                  child: Icon(
+                    activeOrder.serviceName.contains('Suruh') ? Icons.motorcycle_rounded : Icons.delivery_dining_rounded, 
+                    color: AppColors.primary, 
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Jastip Belanja - Indomaret Point',
-                        style: TextStyle(
+                      Text(
+                        '${activeOrder.serviceName} - ${activeOrder.title}',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                           color: AppColors.textPrimary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Kurir (Budi Santoso) sedang membayar belanjaan Anda di kasir...',
+                      Text(
+                        activeOrder.description.isNotEmpty ? activeOrder.description : 'Menunggu update kurir...',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.textSecondary,
                           height: 1.3,
@@ -408,7 +434,7 @@ class HomeScreen extends ConsumerWidget {
               width: double.infinity,
               height: 38,
               child: ElevatedButton(
-                onPressed: () => context.push('/tracking'),
+                onPressed: () => context.push('/tracking', extra: activeOrder),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

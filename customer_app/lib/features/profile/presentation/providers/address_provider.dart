@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/database_service.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/address_model.dart';
+import 'package:uuid/uuid.dart';
 
 final savedAddressesProvider =
     NotifierProvider<SavedAddressesNotifier, List<AddressModel>>(() {
@@ -9,82 +12,114 @@ final savedAddressesProvider =
 class SavedAddressesNotifier extends Notifier<List<AddressModel>> {
   @override
   List<AddressModel> build() {
-    return [
-      const AddressModel(
-        id: 'addr_1',
-        label: 'Rumah',
-        recipientName: 'Budi Santoso',
-        phone: '081234567890',
-        fullAddress: 'Jl. Ahmad Yani No. 12, Bekasi Barat, Kota Bekasi, Jawa Barat 17144',
-        details: 'Pagar hitam di sebelah minimarket, ketuk pintu depan.',
-        isPrimary: true,
-      ),
-      const AddressModel(
-        id: 'addr_2',
-        label: 'Kantor',
-        recipientName: 'Budi Santoso',
-        phone: '081234567890',
-        fullAddress: 'Gedung Sentra Niaga Lt. 4, Jl. KH. Noer Ali, Pekayon Jaya, Bekasi Selatan',
-        details: 'Titipkan di resepsionis lobi utama.',
-        isPrimary: false,
-      ),
-    ];
+    Future.microtask(() => loadAddresses());
+    return [];
   }
 
-  void addAddress(AddressModel address) {
-    if (address.isPrimary || state.isEmpty) {
-      // Jika alamat baru dijadikan utama, jadikan yang lain false
-      final updatedList = state
-          .map((a) => a.copyWith(isPrimary: false))
-          .toList();
+  Future<void> loadAddresses() async {
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+
+    final db = ref.read(databaseServiceProvider);
+    final docs = await db.getUserAddresses(userId);
+    if (docs.isEmpty) {
+      // Mock data if empty
       state = [
-        ...updatedList,
-        address.copyWith(isPrimary: true, id: DateTime.now().millisecondsSinceEpoch.toString()),
+        const AddressModel(
+          id: 'addr_1',
+          label: 'Rumah',
+          recipientName: 'Budi Santoso',
+          phone: '081234567890',
+          fullAddress: 'Jl. Ahmad Yani No. 12, Bekasi Barat, Kota Bekasi, Jawa Barat 17144',
+          details: 'Pagar hitam di sebelah minimarket, ketuk pintu depan.',
+          isPrimary: true,
+        ),
       ];
     } else {
-      state = [
-        ...state,
-        address.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString()),
-      ];
+      state = docs.map((d) => AddressModel.fromJson(d)).toList();
     }
   }
 
-  void updateAddress(AddressModel address) {
+  Future<void> addAddress(AddressModel address) async {
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+
+    final isFirst = state.isEmpty;
+    final newAddress = address.copyWith(
+      id: const Uuid().v4(),
+      isPrimary: isFirst ? true : address.isPrimary,
+    );
+
+    final db = ref.read(databaseServiceProvider);
+    final dataToSave = newAddress.toJson();
+    dataToSave['userId'] = userId;
+    dataToSave.remove('id'); // let appwrite handle it or we pass it as method param
+
+    await db.saveAddress(newAddress.id, dataToSave);
+
+    if (newAddress.isPrimary) {
+      // Need to demote others
+      for (var a in state) {
+        if (a.isPrimary) {
+          final updated = a.copyWith(isPrimary: false);
+          final oldData = updated.toJson();
+          oldData['userId'] = userId;
+          oldData.remove('\$id');
+          await db.saveAddress(a.id, oldData);
+        }
+      }
+    }
+
+    await loadAddresses();
+  }
+
+  Future<void> updateAddress(AddressModel address) async {
+    final authState = ref.read(authStateProvider);
+    final userId = authState.user?.id;
+    if (userId == null) return;
+
+    final db = ref.read(databaseServiceProvider);
+    
     if (address.isPrimary) {
-      state = state.map((a) {
-        if (a.id == address.id) {
-          return address.copyWith(isPrimary: true);
+      for (var a in state) {
+        if (a.isPrimary && a.id != address.id) {
+          final updated = a.copyWith(isPrimary: false);
+          final oldData = updated.toJson();
+          oldData['userId'] = userId;
+          oldData.remove('\$id');
+          await db.saveAddress(a.id, oldData);
         }
-        return a.copyWith(isPrimary: false);
-      }).toList();
-    } else {
-      state = state.map((a) {
-        if (a.id == address.id) {
-          return address;
-        }
-        return a;
-      }).toList();
+      }
     }
+
+    final dataToSave = address.toJson();
+    dataToSave['userId'] = userId;
+    dataToSave.remove('\$id');
+    await db.saveAddress(address.id, dataToSave);
+    
+    await loadAddresses();
   }
 
-  void deleteAddress(String id) {
+  Future<void> deleteAddress(String id) async {
+    final db = ref.read(databaseServiceProvider);
+    await db.deleteAddress(id);
+    
+    // Check if we need to promote another to primary
     final deletedWasPrimary = state.any((a) => a.id == id && a.isPrimary);
-    final remaining = state.where((a) => a.id != id).toList();
-
-    if (deletedWasPrimary && remaining.isNotEmpty) {
-      // Jadikan item pertama sebagai utama jika yang utama dihapus
-      state = [
-        remaining.first.copyWith(isPrimary: true),
-        ...remaining.skip(1),
-      ];
-    } else {
-      state = remaining;
+    await loadAddresses(); // reload first
+    
+    if (deletedWasPrimary && state.isNotEmpty) {
+      final newPrimary = state.first.copyWith(isPrimary: true);
+      await updateAddress(newPrimary);
     }
   }
 
-  void setPrimaryAddress(String id) {
-    state = state.map((a) {
-      return a.copyWith(isPrimary: a.id == id);
-    }).toList();
+  Future<void> setPrimaryAddress(String id) async {
+    final target = state.firstWhere((a) => a.id == id);
+    if (!target.isPrimary) {
+      await updateAddress(target.copyWith(isPrimary: true));
+    }
   }
 }
