@@ -18,11 +18,15 @@ class OrderRepository {
       final docs = await _databaseService.getOrdersByQuery([
         Query.equal('status', 'ongoing'),
       ]);
+      // Hanya tampilkan pesanan yang belum diambil kurir manapun
       return docs
-          .where((doc) => (doc['courierName'] ?? '').isEmpty)
+          .where((doc) =>
+              doc['status'] == 'ongoing' &&
+              (doc['courierId'] == null || (doc['courierId'] as String).isEmpty))
           .map((doc) => OrderModel.fromJson(doc))
           .toList();
     } catch (e) {
+      print('getAvailableOrders error: $e');
       return [];
     }
   }
@@ -32,8 +36,12 @@ class OrderRepository {
       final docs = await _databaseService.getOrdersByQuery([
         Query.equal('courierId', courierId),
       ]);
-      return docs.map((doc) => OrderModel.fromJson(doc)).toList();
+      return docs
+          .where((doc) => doc['courierId'] == courierId)
+          .map((doc) => OrderModel.fromJson(doc))
+          .toList();
     } catch (e) {
+      print('getMyOrders error: $e');
       return [];
     }
   }
@@ -44,8 +52,7 @@ class OrderRepository {
       'ongoing',
       extraData: {
         'courierId': courierId,
-        'courierName': courierName,
-        'statusText': 'Courier assigned',
+        'statusText': 'Kurir menuju lokasi jemput',
       },
     );
   }
@@ -60,5 +67,9 @@ class OrderRepository {
       status,
       extraData: extraData.isNotEmpty ? extraData : null,
     );
+  }
+
+  Future<void> updateCourierLocation(String orderId, double lat, double lng) async {
+    await _databaseService.updateCourierLocation(orderId, lat, lng);
   }
 }

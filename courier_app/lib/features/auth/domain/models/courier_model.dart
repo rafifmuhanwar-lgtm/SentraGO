@@ -59,7 +59,7 @@ class CourierModel {
       'isOnline': isOnline,
       'isActive': isActive,
       'kycVerified': kycVerified,
-      'createdAt': createdAt.toIso8601String(),
+      // 'createdAt': createdAt.toIso8601String(), // Appwrite otomatis menggunakan $createdAt
       'role': 'courier',
     };
   }
@@ -72,6 +72,25 @@ class CourierModel {
       'phone': phone ?? '',
       'photoUrl': photoUrl,
     };
+  }
+
+  /// Hanya field yang tidak null — digunakan saat update dokumen existing
+  /// agar tidak menimpa data profil yang sudah ada (vehicleType, selectedArea, kycVerified)
+  Map<String, dynamic> toJsonNonNull() {
+    final map = <String, dynamic>{
+      'name': name,
+      'role': 'courier',
+    };
+    if (email != null) map['email'] = email;
+    if (phone != null && phone!.isNotEmpty) map['phone'] = phone;
+    if (photoUrl != null) map['photoUrl'] = photoUrl;
+    if (vehicleType != null) map['vehicleType'] = vehicleType;
+    if (vehiclePlate != null) map['vehiclePlate'] = vehiclePlate;
+    if (selectedArea != null) map['selectedArea'] = selectedArea;
+    map['isOnline'] = isOnline;
+    map['isActive'] = isActive;
+    map['kycVerified'] = kycVerified;
+    return map;
   }
 
   CourierModel copyWith({

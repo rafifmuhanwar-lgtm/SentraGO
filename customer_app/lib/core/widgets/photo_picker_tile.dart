@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -12,6 +14,27 @@ class PhotoPickerTile extends StatelessWidget {
     this.hintText = 'Tambah Foto Barang',
     required this.onImagePicked,
   });
+
+  Widget _buildImagePreview(String path) {
+    final bool isNetwork = path.startsWith('http://') || path.startsWith('https://') || (kIsWeb && path.startsWith('blob:'));
+    if (isNetwork || kIsWeb) {
+      return Image.network(
+        path,
+        width: 24,
+        height: 24,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image_outlined, size: 18, color: Colors.grey),
+      );
+    }
+    final File file = path.startsWith('file://') ? File.fromUri(Uri.parse(path)) : File(path);
+    return Image.file(
+      file,
+      width: 24,
+      height: 24,
+      fit: BoxFit.cover,
+      errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image_outlined, size: 18, color: Colors.grey),
+    );
+  }
 
   Future<void> _pickImage(BuildContext context) async {
     final source = await showModalBottomSheet<String>(
@@ -96,12 +119,7 @@ class PhotoPickerTile extends StatelessWidget {
               child: imageUrl != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: Image.network(
-                        imageUrl!,
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.cover,
-                      ),
+                      child: _buildImagePreview(imageUrl!),
                     )
                   : const Icon(Icons.add_a_photo_outlined, size: 18, color: Color(0xFF7F1D3A)),
             ),

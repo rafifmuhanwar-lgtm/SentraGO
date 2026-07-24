@@ -11,6 +11,7 @@ class ChatMessageModel {
   final MessageStatus status;
   final MessageType messageType;
   final String? mediaUrl;
+  final String senderRole; // 'customer' atau 'courier'
 
   const ChatMessageModel({
     required this.id,
@@ -21,6 +22,7 @@ class ChatMessageModel {
     this.status = MessageStatus.sent,
     this.messageType = MessageType.text,
     this.mediaUrl,
+    this.senderRole = '',
   });
 
   String get formattedTime {
@@ -38,6 +40,7 @@ class ChatMessageModel {
     MessageStatus? status,
     MessageType? messageType,
     String? mediaUrl,
+    String? senderRole,
   }) {
     return ChatMessageModel(
       id: id ?? this.id,
@@ -48,6 +51,7 @@ class ChatMessageModel {
       status: status ?? this.status,
       messageType: messageType ?? this.messageType,
       mediaUrl: mediaUrl ?? this.mediaUrl,
+      senderRole: senderRole ?? this.senderRole,
     );
   }
 
@@ -58,10 +62,17 @@ class ChatMessageModel {
       text: json['message'] ?? '',
       timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
       isMine: json['senderId'] == currentUserId,
-      status: MessageStatus.read, // default from DB
-      messageType: MessageType.text,
-      mediaUrl: null,
+      status: MessageStatus.read,
+      messageType: _parseMessageType(json['messageType']),
+      mediaUrl: json['mediaUrl'],
+      senderRole: json['senderRole'] as String? ?? '',
     );
+  }
+
+  static MessageType _parseMessageType(String? type) {
+    if (type == 'image') return MessageType.image;
+    if (type == 'video') return MessageType.video;
+    return MessageType.text;
   }
 
   Map<String, dynamic> toJson(String currentUserId, String currentUserName) {
@@ -69,8 +80,11 @@ class ChatMessageModel {
       'orderId': roomId,
       'senderId': currentUserId,
       'senderName': currentUserName,
+      'senderRole': senderRole.isNotEmpty ? senderRole : 'customer',
       'message': text,
       'timestamp': timestamp.toIso8601String(),
+      'messageType': messageType.name,
+      'mediaUrl': mediaUrl,
     };
   }
 }

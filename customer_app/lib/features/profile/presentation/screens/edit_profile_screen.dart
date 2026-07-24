@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../../../core/services/database_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -18,6 +20,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _phoneController;
   String? _selectedArea;
   bool _isLoading = false;
+  XFile? _newProfileImage;
 
   final List<String> _areaOptions = [
     'Kota Bekasi',
@@ -54,10 +57,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     });
 
     try {
+      String? uploadedPhotoUrl;
+      if (_newProfileImage != null) {
+        uploadedPhotoUrl = await ref.read(databaseServiceProvider).uploadProfileImage(
+          _newProfileImage!.path,
+          _newProfileImage!.name,
+        );
+      }
+
       await ref.read(authStateProvider.notifier).updateProfile(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             selectedArea: _selectedArea,
+            photoUrl: uploadedPhotoUrl,
           );
 
       if (mounted) {
@@ -119,15 +131,42 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: AppColors.primary,
-                      backgroundImage: user?.photoUrl != null
-                          ? NetworkImage(user!.photoUrl!)
-                          : null,
-                      child: user?.photoUrl == null
-                          ? const Icon(Icons.person, size: 32, color: Colors.white)
-                          : null,
+                    GestureDetector(
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                        if (image != null) {
+                          setState(() {
+                            _newProfileImage = image;
+                          });
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 32,
+                            backgroundColor: AppColors.primary,
+                            backgroundImage: _newProfileImage != null
+                                ? FileImage(File(_newProfileImage!.path)) as ImageProvider
+                                : (user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null),
+                            child: (_newProfileImage == null && user?.photoUrl == null)
+                                ? const Icon(Icons.person, size: 32, color: Colors.white)
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

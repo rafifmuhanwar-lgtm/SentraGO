@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../jastip/domain/models/pickup_location_data.dart';
+import '../../../../jastip/presentation/screens/widgets/map_picker_sheet.dart';
 import '../../../domain/models/address_model.dart';
 import '../../providers/address_provider.dart';
 
@@ -29,6 +31,7 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
   late TextEditingController _detailsController;
+  late TextEditingController _customLabelController;
   late String _selectedLabel;
   late bool _isPrimary;
   bool _isLoading = false;
@@ -44,8 +47,12 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
     _addressController = TextEditingController(text: addr?.fullAddress ?? '');
     _detailsController = TextEditingController(text: addr?.details ?? '');
     _selectedLabel = addr?.label ?? 'Rumah';
-    if (!_labelOptions.contains(_selectedLabel)) {
+    if (!_labelOptions.sublist(0, 3).contains(_selectedLabel)) {
+      final customText = (_selectedLabel == 'Lainnya' || _selectedLabel.isEmpty) ? '' : _selectedLabel;
+      _customLabelController = TextEditingController(text: customText);
       _selectedLabel = 'Lainnya';
+    } else {
+      _customLabelController = TextEditingController();
     }
     _isPrimary = addr?.isPrimary ?? false;
   }
@@ -56,11 +63,43 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
     _phoneController.dispose();
     _addressController.dispose();
     _detailsController.dispose();
+    _customLabelController.dispose();
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _pickFromMap() async {
+    final result = await showModalBottomSheet<PickupLocationData>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const MapPickerSheet(
+        title: 'Pilih Titik Alamat dari Peta',
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _addressController.text = result.address;
+      });
+    }
+  }
+
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedLabel == 'Lainnya' && _customLabelController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan tulis label alamat (misal: Kos, Toko)'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final finalLabel = _selectedLabel == 'Lainnya'
+        ? _customLabelController.text.trim()
+        : _selectedLabel;
 
     setState(() {
       _isLoading = true;
@@ -69,7 +108,7 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
     final notifier = ref.read(savedAddressesProvider.notifier);
     final newAddr = AddressModel(
       id: widget.initialAddress?.id ?? '',
-      label: _selectedLabel,
+      label: finalLabel,
       recipientName: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
       fullAddress: _addressController.text.trim(),
@@ -78,9 +117,9 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
     );
 
     if (widget.initialAddress != null) {
-      notifier.updateAddress(newAddr);
+      await notifier.updateAddress(newAddr);
     } else {
-      notifier.addAddress(newAddr);
+      await notifier.addAddress(newAddr);
     }
 
     if (mounted) {
@@ -116,6 +155,7 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
         child: SingleChildScrollView(
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -177,14 +217,29 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
                   );
                 }).toList(),
               ),
+              if (_selectedLabel == 'Lainnya') ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _customLabelController,
+                  decoration: const InputDecoration(
+                    hintText: 'Tulis nama label alamat (contoh: Kos, Toko, Rumah Nenek)',
+                    prefixIcon: Icon(Icons.label_outline, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
 
               // ── Nama Penerima ──
-              Text(
-                'Nama Penerima',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+              Row(
+                children: [
+                  Text(
+                    'Nama Penerima',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const Text(' *', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -195,7 +250,7 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Nama penerima wajib diisi';
+                    return '⚠️ Nama penerima wajib diisi';
                   }
                   return null;
                 },
@@ -203,11 +258,16 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
               const SizedBox(height: 20),
 
               // ── Nomor Telepon ──
-              Text(
-                'Nomor Telepon / WhatsApp',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+              Row(
+                children: [
+                  Text(
+                    'Nomor Telepon / WhatsApp',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const Text(' *', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -219,10 +279,10 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Nomor telepon wajib diisi';
+                    return '⚠️ Nomor telepon/WhatsApp wajib diisi';
                   }
                   if (value.trim().length < 8) {
-                    return 'Nomor telepon tidak valid';
+                    return '⚠️ Nomor telepon minimal 8 angka';
                   }
                   return null;
                 },
@@ -230,22 +290,54 @@ class _AddressFormModalState extends ConsumerState<AddressFormModal> {
               const SizedBox(height: 20),
 
               // ── Alamat Lengkap ──
-              Text(
-                'Alamat Lengkap',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Alamat Lengkap',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const Text(' *', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: _pickFromMap,
+                    icon: const Icon(Icons.map_outlined, size: 18, color: AppColors.primary),
+                    label: const Text(
+                      'Pilih dari Peta',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _addressController,
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Contoh: Jl. Ahmad Yani No. 12, Bekasi Barat, Kota Bekasi...',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.location_on_outlined, color: AppColors.primary),
+                    tooltip: 'Pilih dari Peta',
+                    onPressed: _pickFromMap,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Alamat lengkap wajib diisi';
+                    return '⚠️ Alamat lengkap wajib diisi';
                   }
                   return null;
                 },

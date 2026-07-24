@@ -95,7 +95,7 @@ class DeliveryAddressScreen extends ConsumerWidget {
                             ),
                       ),
                       const SizedBox(height: 12),
-                      ...addresses.map((addr) => _buildAddressCard(context, addr)),
+                      ...addresses.map((addr) => _buildAddressCard(context, ref, addr)),
                     ],
                   ],
                 ),
@@ -120,42 +120,39 @@ class DeliveryAddressScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (addresses.isNotEmpty) ...[
-                    SizedBox(
-                      height: 44,
-                      child: OutlinedButton.icon(
-                        onPressed: () => AddressFormModal.show(context).then((_) {
-                          // Reload addresses after adding new one
-                          ref.invalidate(savedAddressesProvider);
-                        }),
-                        icon: const Icon(Icons.add_location_alt_outlined, size: 20),
-                        label: const Text(
-                          'Tambah Alamat Baru',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   SizedBox(
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: () => _openManualMap(context),
-                      icon: const Icon(Icons.map_outlined, size: 20),
+                      onPressed: () => AddressFormModal.show(context).then((_) {
+                        ref.invalidate(savedAddressesProvider);
+                      }),
+                      icon: const Icon(Icons.add_location_alt_outlined, size: 20),
                       label: const Text(
-                        'Masukkan Alamat Manual',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        'Tambah Alamat Baru',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 46,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openManualMap(context),
+                      icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+                      label: const Text(
+                        'Masukkan Alamat Manual Sekali Pakai',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -174,7 +171,7 @@ class DeliveryAddressScreen extends ConsumerWidget {
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.only(top: 60),
+        padding: const EdgeInsets.only(top: 40),
         child: Column(
           children: [
             Icon(
@@ -186,7 +183,7 @@ class DeliveryAddressScreen extends ConsumerWidget {
             Text(
               'Belum ada alamat tersimpan',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -194,11 +191,22 @@ class DeliveryAddressScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                'Tambahkan alamat atau gunakan alamat manual untuk pengiriman.',
+                'Tambahkan alamat baru untuk mempermudah pemesanan titip belanja atau suruh kurir.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary.withValues(alpha: 0.8),
                     ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: () => AddressFormModal.show(context),
+              icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+              label: const Text('Tambah Alamat Baru', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
             ),
           ],
@@ -207,7 +215,7 @@ class DeliveryAddressScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAddressCard(BuildContext context, AddressModel address) {
+  Widget _buildAddressCard(BuildContext context, WidgetRef ref, AddressModel address) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -280,10 +288,30 @@ class DeliveryAddressScreen extends ConsumerWidget {
                         ),
                       ),
                     const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                      tooltip: 'Edit Alamat',
+                      onPressed: () {
+                        AddressFormModal.show(context, address: address).then((_) {
+                          ref.invalidate(savedAddressesProvider);
+                        });
+                      },
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, color: AppColors.error.withValues(alpha: 0.8), size: 20),
+                      tooltip: 'Hapus Alamat',
+                      onPressed: () => _confirmDeleteAddress(context, ref, address),
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                    ),
+                    const SizedBox(width: 8),
                     Icon(
-                      Icons.radio_button_unchecked,
+                      Icons.arrow_forward_ios_rounded,
                       color: AppColors.textSecondary.withValues(alpha: 0.5),
-                      size: 22,
+                      size: 16,
                     ),
                   ],
                 ),
@@ -348,6 +376,37 @@ class DeliveryAddressScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAddress(BuildContext context, WidgetRef ref, AddressModel address) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Hapus Alamat?'),
+        content: Text('Apakah kamu yakin ingin menghapus alamat "${address.label} - ${address.recipientName}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(savedAddressesProvider.notifier).deleteAddress(address.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Alamat berhasil dihapus'), backgroundColor: AppColors.success),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
       ),
     );
   }

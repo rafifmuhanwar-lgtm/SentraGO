@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:appwrite/appwrite.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/appwrite_client.dart';
+import '../../../../core/services/database_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/chat_room_model.dart';
 import '../../domain/models/chat_message_model.dart';
@@ -12,13 +15,12 @@ final chatRoomsProvider = NotifierProvider<ChatRoomsNotifier, List<ChatRoomModel
 });
 
 class ChatRoomsNotifier extends Notifier<List<ChatRoomModel>> {
-  late final ChatRepository _repository;
+  ChatRepository get _repository => ref.read(chatRepositoryProvider);
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   @override
   List<ChatRoomModel> build() {
-    _repository = ref.watch(chatRepositoryProvider);
     Future.microtask(() => loadRooms());
     return [];
   }
@@ -30,9 +32,7 @@ class ChatRoomsNotifier extends Notifier<List<ChatRoomModel>> {
     _isLoading = false;
   }
 
-  Future<void> refresh() async {
-    await loadRooms();
-  }
+  Future<void> refresh() async => loadRooms();
 }
 
 final chatRoomMessagesProvider =
@@ -41,17 +41,16 @@ final chatRoomMessagesProvider =
 
 class ChatRoomMessagesNotifier extends Notifier<List<ChatMessageModel>> {
   final String arg;
-  late final ChatRepository _repository;
+  ChatRepository get _repository => ref.read(chatRepositoryProvider);
   RealtimeSubscription? _subscription;
 
   ChatRoomMessagesNotifier(this.arg);
 
   @override
   List<ChatMessageModel> build() {
-    _repository = ref.watch(chatRepositoryProvider);
     Future.microtask(() => loadMessages());
     _setupRealtime();
-    
+
     ref.onDispose(() {
       _subscription?.close();
     });
@@ -60,20 +59,25 @@ class ChatRoomMessagesNotifier extends Notifier<List<ChatMessageModel>> {
 
   void _setupRealtime() {
     if (arg == 'room_cs') return;
-    
+
     final realtime = ref.read(realtimeProvider);
     final userId = ref.read(authStateProvider).user?.id ?? '';
-    
-    _subscription = realtime.subscribe(['databases.${AppConfig.appwriteDatabaseId}.collections.${AppConfig.chatsCollection}.documents']);
-    
+
+    _subscription = realtime.subscribe([
+      'databases.${AppConfig.appwriteDatabaseId}.collections.${AppConfig.chatsCollection}.documents'
+    ]);
+
     _subscription!.stream.listen((response) {
-      if (response.events.contains('databases.*.collections.*.documents.*.create')) {
+      if (response.events
+          .contains('databases.*.collections.*.documents.*.create')) {
         final data = response.payload;
+        // Hanya terima pesan untuk room ini yang bukan dari diri sendiri
         if (data['orderId'] == arg && data['senderId'] != userId) {
           final newMsg = ChatMessageModel.fromJson(data, userId);
-          // Check if not already in state
           if (!state.any((m) => m.id == newMsg.id)) {
             state = [...state, newMsg];
+            // Update last message di room list
+            ref.read(chatRoomsProvider.notifier).loadRooms();
           }
         }
       }
@@ -89,6 +93,7 @@ class ChatRoomMessagesNotifier extends Notifier<List<ChatMessageModel>> {
 
   Future<void> sendTextMessage(String text) async {
     if (text.trim().isEmpty) return;
+
     final newMsg = ChatMessageModel(
       id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
       roomId: arg,
@@ -97,48 +102,52 @@ class ChatRoomMessagesNotifier extends Notifier<List<ChatMessageModel>> {
       isMine: true,
       status: MessageStatus.sent,
       messageType: MessageType.text,
+      senderRole: 'customer',
     );
     state = [...state, newMsg];
 
     final sentMsg = await _repository.sendMessage(newMsg);
-    state = state.map((m) => m.id == sentMsg.id ? sentMsg.copyWith(status: MessageStatus.delivered) : m).toList();
+    state = state
+        .map((m) => m.id == newMsg.id
+            ? sentMsg.copyWith(status: MessageStatus.delivered)
+            : m)
+        .toList();
     ref.read(chatRoomsProvider.notifier).loadRooms();
-
-    // Trigger auto reply
-    Future.delayed(const Duration(milliseconds: 1500), () async {
-      final reply = await _repository.generateAutoReply(arg, newMsg);
-      if (reply != null) {
-        state = [...state, reply];
-        state = state.map((m) => m.isMine ? m.copyWith(status: MessageStatus.read) : m).toList();
-        ref.read(chatRoomsProvider.notifier).loadRooms();
-      }
-    });
   }
 
-  Future<void> sendMediaMessage(MessageType type, String caption, String mediaUrl) async {
+  Future<void> pickAndSendMedia(MessageType type, ImageSource source) async {
+    final picker = ImagePicker();
+    final XFile? file = type == MessageType.image 
+        ? await picker.pickImage(source: source)
+        : await picker.pickVideo(source: source);
+        
+    if (file == null) return;
+
+    final dbService = ref.read(databaseServiceProvider);
+    final mediaUrl = await dbService.uploadChatMedia(file.path, file.name);
+
+    if (mediaUrl == null) return;
+
+    final userId = ref.read(authStateProvider).user?.id ?? '';
     final newMsg = ChatMessageModel(
       id: 'msg_media_${DateTime.now().millisecondsSinceEpoch}',
       roomId: arg,
-      text: caption.isNotEmpty ? caption : (type == MessageType.image ? '📷 Foto Lampiran' : '🎥 Video Lampiran'),
+      text: '',
       timestamp: DateTime.now(),
       isMine: true,
       status: MessageStatus.sent,
       messageType: type,
       mediaUrl: mediaUrl,
+      senderRole: 'customer',
     );
     state = [...state, newMsg];
 
     final sentMsg = await _repository.sendMessage(newMsg);
-    state = state.map((m) => m.id == sentMsg.id ? sentMsg.copyWith(status: MessageStatus.delivered) : m).toList();
+    state = state
+        .map((m) => m.id == newMsg.id
+            ? sentMsg.copyWith(status: MessageStatus.delivered)
+            : m)
+        .toList();
     ref.read(chatRoomsProvider.notifier).loadRooms();
-
-    Future.delayed(const Duration(milliseconds: 1800), () async {
-      final reply = await _repository.generateAutoReply(arg, newMsg);
-      if (reply != null) {
-        state = [...state, reply];
-        state = state.map((m) => m.isMine ? m.copyWith(status: MessageStatus.read) : m).toList();
-        ref.read(chatRoomsProvider.notifier).loadRooms();
-      }
-    });
   }
 }

@@ -45,6 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Sentra membutuhkan akses lokasi untuk menentukan alamat pengiriman dan pesanan Anda.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Sentra membutuhkan akses lokasi untuk menentukan alamat pengiriman dan pesanan Anda.</string>
 	<!-- Appwrite OAuth Deep Linking -->
 	<key>CFBundleURLTypes</key>
 	<array>

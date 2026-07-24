@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +20,23 @@ class _CourierReceiptScreenState extends ConsumerState<CourierReceiptScreen> {
   final _receiptAmountController = TextEditingController();
   bool _isSaving = false;
   String? _selectedImagePath;
+
+  Widget _buildImagePreview(String path) {
+    final bool isNetwork = path.startsWith('http://') || path.startsWith('https://') || (kIsWeb && path.startsWith('blob:'));
+    if (isNetwork || kIsWeb) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildUploadPlaceholder(),
+      );
+    }
+    final File file = path.startsWith('file://') ? File.fromUri(Uri.parse(path)) : File(path);
+    return Image.file(
+      file,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildUploadPlaceholder(),
+    );
+  }
 
   @override
   void dispose() {
@@ -107,11 +126,7 @@ class _CourierReceiptScreenState extends ConsumerState<CourierReceiptScreen> {
                       child: _selectedImagePath != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                _selectedImagePath!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _buildUploadPlaceholder(),
-                              ),
+                              child: _buildImagePreview(_selectedImagePath!),
                             )
                           : _buildUploadPlaceholder(),
                     ),

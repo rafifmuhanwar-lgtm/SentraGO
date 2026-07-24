@@ -9,6 +9,7 @@ class OrderModel {
   final String statusText;
   final DateTime createdAt;
   final double totalAmount;
+  final String courierId;   // ← ID kurir untuk lookup ke koleksi couriers
   final String courierName;
   final String courierPhone;
   final String courierAvatar;
@@ -27,6 +28,8 @@ class OrderModel {
   final double? pickupLng;
   final double? dropoffLat;
   final double? dropoffLng;
+  final double? courierLat;
+  final double? courierLng;
 
   // ── Distance ──
   final double? jarakKm;
@@ -35,16 +38,21 @@ class OrderModel {
   // ── Escrow ──
   final String? escrowId;
 
-  // ── Receipt / Completion ──
   final double? totalBelanjaStruk;
   final String? strukImageUrl;
+  final String? deliveryProofUrl;
   final double? refundCustomer;
 
   // ── Kebijakan ──
   final String kebijakanLebih; // 'jangan_lebih' atau 'boleh_lebih'
 
+  // ── Voucher ──
+  final String? voucherCode;
+  final double? voucherDiscount;
+
   // ── Appwrite Required ──
   final String orderType; // 'jastip' atau 'suruh'
+  final DateTime? updatedAt;
 
   const OrderModel({
     required this.id,
@@ -56,6 +64,7 @@ class OrderModel {
     required this.statusText,
     required this.createdAt,
     required this.totalAmount,
+    this.courierId = '',
     required this.courierName,
     required this.courierPhone,
     required this.courierAvatar,
@@ -74,9 +83,15 @@ class OrderModel {
     this.escrowId,
     this.totalBelanjaStruk,
     this.strukImageUrl,
+    this.deliveryProofUrl,
     this.refundCustomer,
     this.kebijakanLebih = 'jangan_lebih',
+    this.voucherCode,
+    this.voucherDiscount,
     this.orderType = 'jastip',
+    this.updatedAt,
+    this.courierLat,
+    this.courierLng,
   });
 
   OrderModel copyWith({
@@ -88,6 +103,7 @@ class OrderModel {
     String? statusText,
     DateTime? createdAt,
     double? totalAmount,
+    String? courierId,
     String? courierName,
     String? courierPhone,
     String? courierAvatar,
@@ -107,9 +123,15 @@ class OrderModel {
     String? escrowId,
     double? totalBelanjaStruk,
     String? strukImageUrl,
+    String? deliveryProofUrl,
     double? refundCustomer,
     String? kebijakanLebih,
+    String? voucherCode,
+    double? voucherDiscount,
     String? orderType,
+    DateTime? updatedAt,
+    double? courierLat,
+    double? courierLng,
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -121,6 +143,7 @@ class OrderModel {
       statusText: statusText ?? this.statusText,
       createdAt: createdAt ?? this.createdAt,
       totalAmount: totalAmount ?? this.totalAmount,
+      courierId: courierId ?? this.courierId,
       courierName: courierName ?? this.courierName,
       courierPhone: courierPhone ?? this.courierPhone,
       courierAvatar: courierAvatar ?? this.courierAvatar,
@@ -139,17 +162,25 @@ class OrderModel {
       escrowId: escrowId ?? this.escrowId,
       totalBelanjaStruk: totalBelanjaStruk ?? this.totalBelanjaStruk,
       strukImageUrl: strukImageUrl ?? this.strukImageUrl,
+      deliveryProofUrl: deliveryProofUrl ?? this.deliveryProofUrl,
       refundCustomer: refundCustomer ?? this.refundCustomer,
       kebijakanLebih: kebijakanLebih ?? this.kebijakanLebih,
+      voucherCode: voucherCode ?? this.voucherCode,
+      voucherDiscount: voucherDiscount ?? this.voucherDiscount,
       orderType: orderType ?? this.orderType,
+      updatedAt: updatedAt ?? this.updatedAt,
+      courierLat: courierLat ?? this.courierLat,
+      courierLng: courierLng ?? this.courierLng,
     );
   }
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
+    double? _parseDouble(dynamic value) => (value as num?)?.toDouble();
+
     return OrderModel(
       id: json['\$id'] ?? json['id'] ?? '',
       userId: json['userId'] ?? '',
-      serviceName: json['serviceName'] ?? json['type'] == 'suruh' ? 'Sentra Suruh' : 'Jastip SentraGO',
+      serviceName: json['serviceName'] ?? (json['type'] == 'suruh' ? 'Sentra Suruh' : 'Jastip SentraGO'),
       title: json['title'] ?? json['item'] ?? '',
       description: json['description'] ?? json['notes'] ?? '',
       status: OrderStatus.values.firstWhere(
@@ -159,7 +190,8 @@ class OrderModel {
       statusText: json['statusText'] ?? '',
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
       totalAmount: (json['totalAmount'] ?? json['totalPrice'] ?? 0).toDouble(),
-      courierName: json['courierName'] ?? json['courierId'] ?? '',
+      courierId: json['courierId'] ?? '',
+      courierName: json['courierName'] ?? '',
       courierPhone: json['courierPhone'] ?? '',
       courierAvatar: json['courierAvatar'] ?? '',
       pickupAddress: json['pickupAddress'] ?? json['pickupLocation'] ?? '',
@@ -177,9 +209,15 @@ class OrderModel {
       escrowId: json['escrowId'],
       totalBelanjaStruk: (json['totalBelanjaStruk'] as num?)?.toDouble(),
       strukImageUrl: json['strukImageUrl'],
+      deliveryProofUrl: json['deliveryProofUrl'],
       refundCustomer: (json['refundCustomer'] as num?)?.toDouble(),
       kebijakanLebih: json['kebijakanLebih'] ?? 'jangan_lebih',
+      voucherCode: json['voucherCode'] as String?,
+      voucherDiscount: (json['voucherDiscount'] as num?)?.toDouble(),
       orderType: json['orderType'] ?? json['type'] ?? 'jastip',
+      updatedAt: json['\$updatedAt'] != null ? DateTime.parse(json['\$updatedAt']) : null,
+      courierLat: _parseDouble(json['courierLat']),
+      courierLng: _parseDouble(json['courierLng']),
     );
   }
 
@@ -188,19 +226,44 @@ class OrderModel {
       'userId': userId,
       'type': orderType,
       'title': title,
-      'item': title,
+      'item': title, // legacy support
       'pickupLocation': pickupAddress,
       'dropoffLocation': deliveryAddress,
+      'pickupAddress': pickupAddress,
+      'deliveryAddress': deliveryAddress,
       'budget': danaBelanja,
+      'danaBelanja': danaBelanja,
       'notes': description,
+      'description': description,
       'status': status.toString().split('.').last,
-      'courierId': courierName,
-      'totalPrice': totalAmount,
+      'statusText': statusText,
+      'courierId': courierId,
+      'courierName': courierName,
+      'courierPhone': courierPhone,
+      'courierAvatar': courierAvatar,
+      'totalPrice': totalAmount, // legacy support
+      'totalAmount': totalAmount,
       'createdAt': createdAt.toIso8601String(),
       'serviceName': serviceName,
-      'totalAmount': totalAmount,
       'ongkir': ongkir,
       'biayaLayanan': biayaLayanan,
+      if (voucherCode != null) 'voucherCode': voucherCode,
+      if (voucherDiscount != null) 'voucherDiscount': voucherDiscount,
+      'pickupLat': pickupLat,
+      'pickupLng': pickupLng,
+      'dropoffLat': dropoffLat,
+      'dropoffLng': dropoffLng,
+      'jarakKm': jarakKm,
+      'estimasiWaktu': estimasiWaktu,
+      'chatRoomId': chatRoomId,
+      'escrowId': escrowId,
+      'totalBelanjaStruk': totalBelanjaStruk,
+      'strukImageUrl': strukImageUrl,
+      'deliveryProofUrl': deliveryProofUrl,
+      'refundCustomer': refundCustomer,
+      'kebijakanLebih': kebijakanLebih,
+      'courierLat': courierLat,
+      'courierLng': courierLng,
     };
   }
 }

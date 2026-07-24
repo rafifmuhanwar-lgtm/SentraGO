@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../domain/models/order_model.dart';
+import '../providers/order_provider.dart';
 
-class OrderScreen extends StatefulWidget {
+class OrderScreen extends ConsumerStatefulWidget {
   const OrderScreen({super.key});
 
   @override
-  State<OrderScreen> createState() => _OrderScreenState();
+  ConsumerState<OrderScreen> createState() => _OrderScreenState();
 }
 
-class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin {
+class _OrderScreenState extends ConsumerState<OrderScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Refresh orders setiap kali screen dibuka
+    Future.microtask(() => ref.read(ordersProvider.notifier).loadOrders());
   }
 
   @override
@@ -26,6 +32,18 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final orders = ref.watch(ordersProvider);
+
+    final activeOrders = orders
+        .where((o) => o.status == OrderStatus.ongoing)
+        .toList();
+    final completedOrders = orders
+        .where((o) => o.status == OrderStatus.completed)
+        .toList();
+    final cancelledOrders = orders
+        .where((o) => o.status == OrderStatus.cancelled)
+        .toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -35,49 +53,63 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary,
-          tabs: const [
-            Tab(text: 'Aktif'),
-            Tab(text: 'Selesai'),
-            Tab(text: 'Dibatalkan'),
+          tabs: [
+            Tab(text: 'Aktif (${activeOrders.length})'),
+            Tab(text: 'Selesai (${completedOrders.length})'),
+            Tab(text: 'Dibatalkan (${cancelledOrders.length})'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildOrderList(context, isActive: true),
-          _buildOrderList(context, isActive: false),
-          _buildEmptyState(context, 'Belum ada pesanan dibatalkan'),
+          _buildOrderList(context, activeOrders),
+          _buildOrderList(context, completedOrders),
+          _buildOrderList(context, cancelledOrders),
         ],
       ),
     );
   }
 
-  Widget _buildOrderList(BuildContext context, {required bool isActive}) {
-    // Demo data
-    final List<_OrderData> orders = [];
-
+  Widget _buildOrderList(BuildContext context, List<OrderModel> orders) {
     if (orders.isEmpty) {
       return _buildEmptyState(context, 'Belum ada pesanan');
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(20),
-      itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return _buildOrderCard(context, order);
-      },
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () => ref.read(ordersProvider.notifier).loadOrders(),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: orders.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          return _buildOrderCard(context, orders[index]);
+        },
+      ),
     );
   }
 
-  Widget _buildOrderCard(BuildContext context, _OrderData order) {
-    final isActive = order.status != 'Selesai' && order.status != 'Dibatalkan';
+  Widget _buildOrderCard(BuildContext context, OrderModel order) {
+    final isActive = order.status == OrderStatus.ongoing;
+
+    final (iconData, iconColor) = switch (order.orderType) {
+      'suruh' => (Icons.directions_run_rounded, Colors.orange),
+      _ => (Icons.shopping_bag_rounded, AppColors.primary),
+    };
+
+    final statusColor = switch (order.status) {
+      OrderStatus.ongoing => Colors.blue,
+      OrderStatus.completed => Colors.green,
+      OrderStatus.cancelled => Colors.red,
+    };
+
     return GestureDetector(
       onTap: () {
         if (isActive) {
-          context.push('/tracking');
+          context.push('/tracking', extra: order);
+        } else {
+          context.push('/order/detail', extra: order);
         }
       },
       child: Container(
@@ -92,10 +124,10 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: order.color.withValues(alpha: 0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(order.icon, color: order.color, size: 28),
+              child: Icon(iconData, color: iconColor, size: 28),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -103,27 +135,59 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    order.title,
+                    order.title.isNotEmpty ? order.title : order.serviceName,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    order.status,
+                    order.statusText.isNotEmpty
+                        ? order.statusText
+                        : order.status.name,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: order.color,
+                          color: statusColor,
                           fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatDate(order.createdAt),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'Rp ${order.totalAmount.toStringAsFixed(0)}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) return 'Hari ini';
+    if (diff.inDays == 1) return 'Kemarin';
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Widget _buildEmptyState(BuildContext context, String message) {
@@ -131,7 +195,11 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.textSecondary.withValues(alpha: 0.4)),
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 64,
+            color: AppColors.textSecondary.withValues(alpha: 0.4),
+          ),
           const SizedBox(height: 16),
           Text(
             message,
@@ -139,18 +207,14 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                   color: AppColors.textSecondary,
                 ),
           ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => ref.read(ordersProvider.notifier).loadOrders(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Muat Ulang'),
+          ),
         ],
       ),
     );
   }
-}
-
-class _OrderData {
-  final String title;
-  final String status;
-  final IconData icon;
-  final Color color;
-  final String category;
-
-  _OrderData(this.title, this.status, this.icon, this.color, this.category);
 }

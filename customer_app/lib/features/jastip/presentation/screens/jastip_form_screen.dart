@@ -234,11 +234,15 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}',
-                        additionalOptions: const {
-                          'accessToken': AppConfig.mapboxAccessToken,
-                        },
-                        userAgentPackageName: 'com.sentrago.customer_app',
+                        urlTemplate: AppConfig.mapboxAccessToken.isNotEmpty
+                            ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}'
+                            : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        additionalOptions: AppConfig.mapboxAccessToken.isNotEmpty
+                            ? const {
+                                'accessToken': AppConfig.mapboxAccessToken,
+                              }
+                            : const {},
+                        userAgentPackageName: 'com.sentra.customer_app',
                       ),
                     ],
                   ),

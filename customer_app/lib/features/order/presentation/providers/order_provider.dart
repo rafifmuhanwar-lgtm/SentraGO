@@ -1,18 +1,30 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/order_model.dart';
 import '../../data/repositories/order_repository.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 enum OrderStatusFilter { all, ongoing, completed }
 
 final ordersProvider = NotifierProvider<OrdersNotifier, List<OrderModel>>(OrdersNotifier.new);
 
 class OrdersNotifier extends Notifier<List<OrderModel>> {
-  late final OrderRepository _repository;
+  OrderRepository get _repository => ref.read(orderRepositoryProvider);
 
   @override
   List<OrderModel> build() {
-    _repository = ref.watch(orderRepositoryProvider);
-    Future.microtask(() => loadOrders());
+    // Listen to auth state changes - reload orders when user becomes authenticated
+    ref.listen(authStateProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated && next.user != null) {
+        Future.microtask(() => loadOrders());
+      }
+    });
+
+    // Juga load sekarang jika sudah authenticated (misal hot restart)
+    final authStatus = ref.read(authStateProvider).status;
+    if (authStatus == AuthStatus.authenticated) {
+      Future.microtask(() => loadOrders());
+    }
+
     return [];
   }
 
@@ -26,6 +38,7 @@ class OrdersNotifier extends Notifier<List<OrderModel>> {
     state = [added, ...state];
   }
 }
+
 
 final orderFilterProvider = NotifierProvider<OrderFilterNotifier, OrderStatusFilter>(OrderFilterNotifier.new);
 

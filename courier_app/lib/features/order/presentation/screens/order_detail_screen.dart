@@ -1,13 +1,22 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/services/distance_service.dart';
 import '../../domain/models/order_model.dart';
 import '../../data/repositories/order_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../chat/domain/models/chat_room_model.dart';
+import 'delivery_proof_screen.dart';
+import '../../../../core/services/database_service.dart';
+import '../providers/order_provider.dart';
+import '../../../profile/presentation/providers/courier_earnings_provider.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final OrderModel order;
@@ -22,10 +31,66 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   String? _currentCourierStatus;
   bool _isAccepting = false;
   bool _isUpdating = false;
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void initState() {
     super.initState();
+    _currentCourierStatus = widget.order.statusText;
+    if (widget.order.status == OrderStatus.ongoing && widget.order.courierName.isNotEmpty) {
+      _startTracking();
+    }
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+  void _startTracking() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // Update per 10 meter
+      ),
+    ).listen((Position position) {
+      ref.read(orderRepositoryProvider).updateCourierLocation(
+        widget.order.id, 
+        position.latitude, 
+        position.longitude,
+      );
+    });
+  }
+
+  Future<void> _openGoogleMaps() async {
+    final isHeadingToPickup = _currentCourierStatus == 'Menuju Lokasi';
+    final lat = isHeadingToPickup ? widget.order.pickupLat : widget.order.dropoffLat;
+    final lng = isHeadingToPickup ? widget.order.pickupLng : widget.order.dropoffLng;
+
+    if (lat == null || lng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Koordinat lokasi tidak tersedia')));
+      return;
+    }
+    
+    final url = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tidak bisa membuka aplikasi Maps')));
+      }
+    }
   }
 
   bool get _isAccepted => widget.order.courierName.isNotEmpty;
@@ -63,6 +128,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         const SnackBar(content: Text('Pesanan berhasil diterima!')),
       );
       setState(() => _currentCourierStatus = 'Menuju Lokasi');
+      _startTracking();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,6 +140,34 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   Future<void> _updateStatus(String statusText) async {
+    if (statusText == 'Barang Dibeli / Tugas Selesai' && widget.order.type == 'jastip') {
+      final success = await context.push<bool>('/order/receipt', extra: widget.order);
+      if (success == true) {
+        setState(() => _currentCourierStatus = statusText);
+      }
+      return;
+    }
+
+    if (statusText == 'Pesanan Selesai') {
+      final success = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => DeliveryProofScreen(order: widget.order),
+        ),
+      );
+      if (success == true) {
+        final courier = ref.read(authStateProvider).courier;
+        if (courier != null) {
+          ref.read(myOrdersProvider.notifier).refresh(courier.id);
+        }
+        ref.invalidate(courierEarningsProvider);
+        
+        if (mounted) {
+          context.pop();
+        }
+      }
+      return;
+    }
+
     setState(() => _isUpdating = true);
 
     try {
@@ -87,18 +181,6 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Status: $statusText')),
       );
-
-      if (statusText == 'Pesanan Selesai') {
-        await ref.read(orderRepositoryProvider).updateOrderStatus(
-              widget.order.id,
-              'completed',
-              statusText: 'Pesanan Selesai',
-            );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pesanan telah selesai!')),
-        );
-      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +219,24 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
 
             // Map preview
             _buildMapPreview(),
+            const SizedBox(height: 12),
+            
+            // Navigation Button
+            if (_isAccepted)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _openGoogleMaps,
+                  icon: const Icon(Icons.navigation, size: 18),
+                  label: Text('Buka Navigasi ke ${_currentCourierStatus == 'Menuju Lokasi' ? 'Pickup' : 'Tujuan'}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E88E5), // Google Maps Blue
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
             const SizedBox(height: 20),
 
             // Pickup & delivery addresses
@@ -154,12 +254,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             // Action buttons
             if (!_isAccepted)
               _buildAcceptButton()
-            else ...[
+            else
               _buildStatusUpdateSection(),
-              const SizedBox(height: 16),
-              if (widget.order.type == 'jastip')
-                _buildUploadStrukButton(),
-            ],
 
             const SizedBox(height: 16),
             _buildChatButton(),
@@ -225,134 +321,44 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
         ),
-        clipBehavior: Clip.antiAlias,
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.map_outlined,
-                  size: 56,
-                  color: AppColors.textSecondary),
+              Icon(Icons.map_outlined, size: 56, color: AppColors.textSecondary),
               SizedBox(height: 8),
-              Text(
-                'Lokasi tidak tersedia',
-                style: TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12),
-              ),
+              Text('Lokasi tidak tersedia',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             ],
           ),
         ),
       );
     }
 
-    // Center map between pickup and dropoff
-    final lat = hasPickupCoords
-        ? (widget.order.pickupLat! +
-                (hasDropoffCoords ? widget.order.dropoffLat! : widget.order.pickupLat!)) /
-            2
-        : widget.order.dropoffLat!;
-    final lng = hasPickupCoords
-        ? (widget.order.pickupLng! +
-                (hasDropoffCoords ? widget.order.dropoffLng! : widget.order.pickupLng!)) /
-            2
-        : widget.order.dropoffLng!;
+    // Ambil vehicleType dari kurir yang sedang login
+    final authState = ref.watch(authStateProvider);
+    final vehicleType = authState.courier?.vehicleType;
 
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          FlutterMap(
-            options: MapOptions(
-              initialCenter: LatLng(lat, lng),
-              initialZoom: 14.0,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}',
-                additionalOptions: const {
-                  'accessToken': AppConfig.mapboxAccessToken,
-                },
-                userAgentPackageName: 'com.sentrago.courier_app',
-              ),
-              MarkerLayer(
-                markers: [
-                  if (hasPickupCoords)
-                    Marker(
-                      point: LatLng(widget.order.pickupLat!, widget.order.pickupLng!),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.storefront,
-                              color: AppColors.primary, size: 32),
-                          Text('Pickup',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary)),
-                        ],
-                      ),
-                    ),
-                  if (hasDropoffCoords)
-                    Marker(
-                      point:
-                          LatLng(widget.order.dropoffLat!, widget.order.dropoffLng!),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.location_on,
-                              color: AppColors.error, size: 32),
-                          Text('Tujuan',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.error)),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          // Legend overlay
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.my_location, size: 14, color: AppColors.primary),
-                  const SizedBox(width: 4),
-                  const Text('Pickup',
-                      style: TextStyle(fontSize: 10)),
-                  if (hasDropoffCoords) ...[
-                    const SizedBox(width: 8),
-                    Icon(Icons.location_on,
-                        size: 14, color: AppColors.error),
-                    const SizedBox(width: 4),
-                    const Text('Tujuan',
-                        style: TextStyle(fontSize: 10)),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    final double centerLat;
+    final double centerLng;
+    if (hasPickupCoords && hasDropoffCoords) {
+      centerLat = (widget.order.pickupLat! + widget.order.dropoffLat!) / 2;
+      centerLng = (widget.order.pickupLng! + widget.order.dropoffLng!) / 2;
+    } else if (hasPickupCoords) {
+      centerLat = widget.order.pickupLat!;
+      centerLng = widget.order.pickupLng!;
+    } else {
+      centerLat = widget.order.dropoffLat!;
+      centerLng = widget.order.dropoffLng!;
+    }
+
+    return _VehicleRouteMap(
+      order: widget.order,
+      vehicleType: vehicleType,
+      centerLat: centerLat,
+      centerLng: centerLng,
+      hasPickup: hasPickupCoords,
+      hasDropoff: hasDropoffCoords,
     );
   }
 
@@ -596,7 +602,45 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
+  int get _currentStatusIndex {
+    if (_currentCourierStatus == null || _currentCourierStatus!.isEmpty) return -1;
+    return _statusOptions.indexWhere((opt) => opt.label == _currentCourierStatus);
+  }
+
   Widget _buildStatusUpdateSection() {
+    final currentIndex = _currentStatusIndex;
+    final nextIndex = currentIndex + 1;
+    
+    // Jika pesanan sudah selesai
+    if (widget.order.status == OrderStatus.completed || currentIndex == _statusOptions.length - 1) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, color: AppColors.success, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Pesanan Telah Selesai',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.success,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final nextOption = _statusOptions[nextIndex];
+    final isDisabled = _isUpdating;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -607,12 +651,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.update, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Update Status',
+              const Icon(Icons.update, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Langkah Selanjutnya',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -621,84 +665,109 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          ..._statusOptions.map((option) {
-            final isSelected = _currentCourierStatus == option.label;
-            final isDisabled = _isUpdating;
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: isDisabled
-                      ? null
-                      : () => _updateStatus(option.label),
-                  icon: isSelected
-                      ? const Icon(Icons.check_circle, size: 20, color: AppColors.success)
-                      : Icon(option.icon, size: 20),
-                  label: Text(
-                    option.label,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected ? AppColors.success : AppColors.textPrimary,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isSelected ? AppColors.success : AppColors.textPrimary,
-                    side: BorderSide(
-                      color: isSelected ? AppColors.success : AppColors.border,
-                      width: isSelected ? 2 : 1,
-                    ),
-                    backgroundColor: isSelected
-                        ? AppColors.success.withValues(alpha: 0.05)
-                        : null,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+          if (_currentCourierStatus != null && _currentCourierStatus!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.info_outline, size: 14, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  'Status saat ini: $_currentCourierStatus',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: isDisabled ? null : () => _updateStatus(nextOption.label),
+              icon: isDisabled 
+                ? const SizedBox(
+                    width: 20, height: 20, 
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                  )
+                : Icon(nextOption.icon),
+              label: Text(
+                isDisabled 
+                  ? 'Mengupdate...' 
+                  : 'Update: ${nextOption.label == 'Barang Dibeli / Tugas Selesai' ? (widget.order.type == 'jastip' ? 'Barang Dibeli' : 'Tugas Selesai') : nextOption.label}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-            );
-          }),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: nextIndex == _statusOptions.length - 1 
+                    ? AppColors.success 
+                    : AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildUploadStrukButton() {
-    return SizedBox(
-      height: 52,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          context.push('/order/receipt', extra: widget.order);
-        },
-        icon: const Icon(Icons.receipt),
-        label: const Text(
-          'Upload Struk',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.warning,
-          foregroundColor: AppColors.textLight,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildChatButton() {
     return SizedBox(
       height: 52,
       child: OutlinedButton.icon(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fitur chat akan segera tersedia')),
+        onPressed: () async {
+          String customerName = widget.order.userId.isNotEmpty
+              ? 'Customer #${widget.order.userId.substring(0, 6).toUpperCase()}'
+              : 'Customer';
+          String avatarUrl = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+
+          // Ambil data pelanggan asli dari database
+          if (widget.order.userId.isNotEmpty) {
+            // Tampilkan loading dialog sebentar
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => const Center(child: CircularProgressIndicator()),
+            );
+            
+            try {
+              final userDoc = await ref.read(databaseServiceProvider).getUser(widget.order.userId);
+              if (userDoc != null) {
+                if (userDoc['name'] != null && userDoc['name'].toString().isNotEmpty) {
+                  customerName = userDoc['name'];
+                }
+                if (userDoc['photoUrl'] != null && userDoc['photoUrl'].toString().isNotEmpty) {
+                  avatarUrl = userDoc['photoUrl'];
+                } else if (userDoc['avatarUrl'] != null && userDoc['avatarUrl'].toString().isNotEmpty) {
+                  avatarUrl = userDoc['avatarUrl'];
+                }
+              }
+            } catch (e) {
+              debugPrint('Gagal fetch data customer: $e');
+            }
+            
+            if (!mounted) return;
+            Navigator.of(context).pop(); // tutup loading dialog
+          }
+
+          if (!mounted) return;
+              
+          final room = ChatRoomModel(
+            id: widget.order.id,
+            customerName: customerName,
+            avatarUrl: avatarUrl,
+            lastMessage: 'Chat dengan customer',
+            lastMessageTime: widget.order.createdAt,
+            isOnline: true,
+            orderType: widget.order.type,
+            orderTitle: widget.order.title,
           );
+          context.push('/chat/room', extra: room);
         },
         icon: const Icon(Icons.chat_bubble_outline),
         label: const Text(
@@ -761,3 +830,308 @@ class _StatusOption {
 
   const _StatusOption(this.label, this.icon);
 }
+
+// ── Vehicle-aware route map ───────────────────────────────────────────────────
+
+class _VehicleRouteMap extends StatefulWidget {
+  final OrderModel order;
+  final String? vehicleType;
+  final double centerLat;
+  final double centerLng;
+  final bool hasPickup;
+  final bool hasDropoff;
+
+  const _VehicleRouteMap({
+    required this.order,
+    required this.vehicleType,
+    required this.centerLat,
+    required this.centerLng,
+    required this.hasPickup,
+    required this.hasDropoff,
+  });
+
+  @override
+  State<_VehicleRouteMap> createState() => _VehicleRouteMapState();
+}
+
+class _VehicleRouteMapState extends State<_VehicleRouteMap> {
+  List<LatLng> _polylinePoints = [];
+  bool _isLoadingRoute = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRoute();
+  }
+
+  @override
+  void didUpdateWidget(_VehicleRouteMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.vehicleType != widget.vehicleType) {
+      _fetchRoute();
+    }
+  }
+
+  Future<void> _fetchRoute() async {
+    if (!widget.hasPickup || !widget.hasDropoff) {
+      setState(() => _isLoadingRoute = false);
+      return;
+    }
+    try {
+      final svc = DistanceService();
+      final points = await svc.getRouteCoordinates(
+        fromLat: widget.order.pickupLat!,
+        fromLng: widget.order.pickupLng!,
+        toLat: widget.order.dropoffLat!,
+        toLng: widget.order.dropoffLng!,
+        vehicleType: widget.vehicleType,
+      );
+      if (mounted) {
+        setState(() {
+          _polylinePoints =
+              points.map((p) => LatLng(p.lat, p.lng)).toList();
+          _isLoadingRoute = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingRoute = false);
+    }
+  }
+
+  /// Warna polyline sesuai tipe kendaraan
+  Color get _routeColor {
+    final type = widget.vehicleType?.toLowerCase().trim() ?? '';
+    if (type == 'motor' || type == 'motorcycle' || type == 'sepeda motor') {
+      return const Color(0xFFFF6B00); // oranye untuk motor
+    } else if (type == 'sepeda' || type == 'bicycle' || type == 'bike') {
+      return const Color(0xFF00AA44); // hijau untuk sepeda
+    } else if (type == 'jalan kaki' || type == 'walking') {
+      return const Color(0xFF8B5CF6); // ungu untuk jalan kaki
+    }
+    return AppColors.primary; // biru default untuk mobil
+  }
+
+  /// Ikon kendaraan
+  IconData get _vehicleIcon {
+    final type = widget.vehicleType?.toLowerCase().trim() ?? '';
+    if (type == 'motor' || type == 'motorcycle' || type == 'sepeda motor') {
+      return Icons.two_wheeler;
+    } else if (type == 'sepeda' || type == 'bicycle' || type == 'bike') {
+      return Icons.directions_bike;
+    } else if (type == 'jalan kaki' || type == 'walking') {
+      return Icons.directions_walk;
+    }
+    return Icons.directions_car;
+  }
+
+  /// Label rute
+  String get _routeLabel {
+    final type = widget.vehicleType?.toLowerCase().trim() ?? '';
+    if (type == 'motor' || type == 'motorcycle' || type == 'sepeda motor') {
+      return 'Rute Motor · Tanpa Tol';
+    } else if (type == 'sepeda' || type == 'bicycle' || type == 'bike') {
+      return 'Rute Sepeda';
+    } else if (type == 'jalan kaki' || type == 'walking') {
+      return 'Rute Jalan Kaki';
+    }
+    if (type.isNotEmpty) {
+      return 'Rute ${_capitalize(type)}';
+    }
+    return 'Rute Normal';
+  }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  @override
+  Widget build(BuildContext context) {
+    final pickup = widget.hasPickup
+        ? LatLng(widget.order.pickupLat!, widget.order.pickupLng!)
+        : null;
+    final dropoff = widget.hasDropoff
+        ? LatLng(widget.order.dropoffLat!, widget.order.dropoffLng!)
+        : null;
+
+    final fallbackPolyline = [
+      if (pickup != null) pickup,
+      if (dropoff != null) dropoff,
+    ];
+
+    final polylinePoints =
+        _polylinePoints.isNotEmpty ? _polylinePoints : fallbackPolyline;
+
+    return Container(
+      height: 220,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: LatLng(widget.centerLat, widget.centerLng),
+              initialZoom: 13.5,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: AppConfig.mapboxAccessToken.isNotEmpty
+                    ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${AppConfig.mapboxAccessToken}'
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sentrago.courier_app',
+              ),
+              if (polylinePoints.length >= 2)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: polylinePoints,
+                      strokeWidth: 5.0,
+                      color: _routeColor,
+                    ),
+                  ],
+                ),
+              MarkerLayer(
+                markers: [
+                  if (pickup != null)
+                    Marker(
+                      point: pickup,
+                      width: 40,
+                      height: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 4)
+                          ],
+                          border: Border.all(color: AppColors.primary, width: 2),
+                        ),
+                        child: const Icon(Icons.storefront,
+                            color: AppColors.primary, size: 22),
+                      ),
+                    ),
+                  if (dropoff != null)
+                    Marker(
+                      point: dropoff,
+                      width: 40,
+                      height: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 4)
+                          ],
+                          border: Border.all(color: AppColors.error, width: 2),
+                        ),
+                        child: const Icon(Icons.location_on,
+                            color: AppColors.error, size: 22),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+
+          // Badge kendaraan — pojok kiri bawah
+          Positioned(
+            bottom: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _routeColor.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(_vehicleIcon, color: Colors.white, size: 15),
+                  const SizedBox(width: 5),
+                  Text(
+                    _routeLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Loading shimmer indicator
+          if (_isLoadingRoute)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _routeColor,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('Memuat rute...',
+                        style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            // Legend badge — pojok kanan atas
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.storefront, size: 13, color: AppColors.primary),
+                    const SizedBox(width: 3),
+                    const Text('Pickup',
+                        style: TextStyle(fontSize: 10)),
+                    const SizedBox(width: 8),
+                    Icon(Icons.location_on, size: 13, color: AppColors.error),
+                    const SizedBox(width: 3),
+                    const Text('Tujuan',
+                        style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+

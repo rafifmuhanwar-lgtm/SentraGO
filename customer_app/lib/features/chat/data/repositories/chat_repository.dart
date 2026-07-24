@@ -27,7 +27,7 @@ class ChatRepository {
     final orders = await _orderRepo.getOrders();
     final List<ChatRoomModel> rooms = [];
 
-    // Add Customer Service
+    // Customer Service room (mock)
     rooms.add(
       ChatRoomModel(
         id: 'room_cs',
@@ -40,23 +40,38 @@ class ChatRepository {
         lastSeenText: 'Aktif 24 Jam',
         serviceType: 'Bantuan & Kendala',
         isSupport: true,
+        orderStatus: 'ongoing',
       ),
     );
 
-    // Map active/recent orders to chat rooms
+    // Satu room per order (pakai order.id sebagai orderId/roomId)
     for (var order in orders) {
+      String courierAvatar = order.courierAvatar;
+      
+      // Ambil foto profil terbaru dari database
+      if (order.courierId.isNotEmpty) {
+        final courierData = await _dbService.getCourierById(order.courierId);
+        if (courierData != null && courierData['photoUrl'] != null && courierData['photoUrl'].toString().isNotEmpty) {
+          courierAvatar = courierData['photoUrl'];
+        }
+      }
+
       rooms.add(
         ChatRoomModel(
           id: order.id,
-          senderName: order.courierName.isNotEmpty ? '${order.courierName} - Kurir' : 'Kurir SentraGO',
-          avatarUrl: order.courierAvatar.isNotEmpty ? order.courierAvatar : 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150', // placeholder
-          lastMessage: order.description,
+          senderName: order.courierName.isNotEmpty ? '${order.courierName} · Kurir' : 'Kurir SentraGO',
+          avatarUrl: courierAvatar.isNotEmpty
+              ? courierAvatar
+              : 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+          lastMessage: order.description.isNotEmpty ? order.description : 'Tap untuk mulai chat',
           lastMessageTime: order.createdAt,
           unreadCount: 0,
-          isOnline: true,
-          lastSeenText: 'Terakhir aktif baru saja',
+          isOnline: order.courierName.isNotEmpty,
+          lastSeenText: order.courierName.isNotEmpty ? 'Kurir aktif' : 'Menunggu kurir',
           serviceType: order.serviceName,
           isSupport: false,
+          orderStatus: order.status.toString().split('.').last,
+          orderUpdatedAt: order.updatedAt,
         ),
       );
     }
@@ -67,8 +82,8 @@ class ChatRepository {
   Future<List<ChatMessageModel>> getMessages(String roomId) async {
     final userId = _userId;
     if (userId == null) return [];
-    
-    // Check if it's CS room mock
+
+    // CS room: mock
     if (roomId == 'room_cs') {
       return [
         ChatMessageModel(
@@ -78,6 +93,7 @@ class ChatRepository {
           timestamp: DateTime.now().subtract(const Duration(hours: 3)),
           isMine: false,
           status: MessageStatus.delivered,
+          senderRole: 'support',
         ),
       ];
     }
@@ -90,64 +106,19 @@ class ChatRepository {
     final userId = _userId;
     if (userId == null) return message;
 
-    if (message.roomId == 'room_cs') {
-      // Mock for CS
-      return message;
-    }
+    // CS room: mock only
+    if (message.roomId == 'room_cs') return message;
 
-    final msgToSave = message.copyWith(id: const Uuid().v4());
-    
+    final msgToSave = message.copyWith(id: const Uuid().v4(), senderRole: 'customer');
+
     await _dbService.createChatMessage(
-      data: msgToSave.toJson(userId, _userName ?? 'User'),
+      data: msgToSave.toJson(userId, _userName ?? 'Customer'),
     );
 
     return msgToSave;
   }
 
   Future<void> markRoomAsRead(String roomId) async {
-    // Implementation needed if we store read status
-  }
-
-  Future<ChatMessageModel?> generateAutoReply(String roomId, ChatMessageModel triggerMsg) async {
-    if (_userId == null) return null;
-
-    String replyText;
-    if (roomId == 'room_cs') {
-      replyText = 'Terima kasih atas pesannya. Tim CS kami sedang meninjau kendala Anda dan akan segera membantu menyelesaikan dalam waktu dekat.';
-    } else {
-      if (triggerMsg.messageType == MessageType.image || triggerMsg.messageType == MessageType.video) {
-        replyText = 'Mantap kak, lampiran medianya sudah saya terima dan dicek ya!';
-      } else if (triggerMsg.text.toLowerCase().contains('posisi')) {
-        replyText = 'Saya sedang dalam perjalanan menuju lokasi titik antar kak, sekitar 5-10 menit lagi sampai.';
-      } else if (triggerMsg.text.toLowerCase().contains('terima kasih') || triggerMsg.text.toLowerCase().contains('makasih')) {
-        replyText = 'Sama-sama kak! Semoga puas dengan layanan SentraGO 🙏';
-      } else {
-        replyText = 'Siap kak! Sudah saya catat dan pastikan semuanya sesuai instruksi pesanan ya 👍';
-      }
-    }
-
-    final replyMessage = ChatMessageModel(
-      id: const Uuid().v4(),
-      roomId: roomId,
-      text: replyText,
-      timestamp: DateTime.now(),
-      isMine: false,
-      status: MessageStatus.delivered,
-    );
-
-    // Save auto-reply to DB if not CS room
-    if (roomId != 'room_cs') {
-      await _dbService.createChatMessage(
-        data: {
-          'orderId': roomId,
-          'senderId': 'courier_auto',
-          'senderName': 'Kurir',
-          'message': replyText,
-          'timestamp': DateTime.now().toIso8601String(),
-        },
-      );
-    }
-
-    return replyMessage;
+    // Future: update isRead = true WHERE orderId = roomId AND senderId != userId
   }
 }

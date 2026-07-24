@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../jastip/domain/models/pickup_location_data.dart';
+import '../../../jastip/presentation/screens/widgets/map_picker_sheet.dart';
+import '../../../location/presentation/providers/current_location_provider.dart';
 import '../../../order/domain/models/order_model.dart';
 import '../../../order/presentation/providers/order_provider.dart';
 import '../providers/promo_provider.dart';
@@ -55,6 +58,8 @@ class HomeScreen extends ConsumerWidget {
                                         color: Colors.white70,
                                       ),
                                 ),
+                                const SizedBox(height: 10),
+                                _buildCurrentLocationWidget(context, ref),
                               ],
                             ),
                           ),
@@ -415,12 +420,21 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        activeOrder.description.isNotEmpty ? activeOrder.description : 'Menunggu update kurir...',
+                        activeOrder.statusText.isNotEmpty
+                            ? activeOrder.statusText
+                            : (activeOrder.courierId.isNotEmpty
+                                ? 'Kurir sedang memproses pesananmu'
+                                : 'Sedang mencari kurir...'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: activeOrder.courierId.isNotEmpty
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                          fontWeight: activeOrder.courierId.isNotEmpty
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                           height: 1.3,
                         ),
                       ),
@@ -780,5 +794,106 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildCurrentLocationWidget(BuildContext context, WidgetRef ref) {
+    final locationState = ref.watch(currentLocationProvider);
+
+    return GestureDetector(
+      onTap: () async {
+        if (locationState.status == CurrentLocationStatus.permissionDenied ||
+            locationState.status == CurrentLocationStatus.serviceDisabled) {
+          ref.read(currentLocationProvider.notifier).openSettings();
+        } else {
+          final result = await showModalBottomSheet<PickupLocationData>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => MapPickerSheet(
+              title: 'Titik Lokasi Kamu Saat Ini',
+              initialLat: locationState.latitude,
+              initialLng: locationState.longitude,
+            ),
+          );
+          if (result != null) {
+            ref.read(currentLocationProvider.notifier).updateLocation(
+                  latitude: result.lat,
+                  longitude: result.lng,
+                  address: result.address,
+                );
+          } else if (locationState.status == CurrentLocationStatus.error) {
+            ref.read(currentLocationProvider.notifier).detectLocation();
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.35),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              locationState.status == CurrentLocationStatus.loading
+                  ? Icons.my_location_rounded
+                  : Icons.location_on_rounded,
+              color: Colors.white,
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                _getLocationDisplayText(locationState),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            if (locationState.status == CurrentLocationStatus.loading)
+              const SizedBox(
+                width: 10,
+                height: 10,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            else
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Colors.white.withValues(alpha: 0.8),
+                size: 16,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getLocationDisplayText(CurrentLocationState state) {
+    switch (state.status) {
+      case CurrentLocationStatus.initial:
+      case CurrentLocationStatus.loading:
+        return 'Mendeteksi lokasi kamu...';
+      case CurrentLocationStatus.ready:
+        return state.address ?? 'Lokasi ditemukan';
+      case CurrentLocationStatus.serviceDisabled:
+        return 'GPS nonaktif (Klik aktifkan)';
+      case CurrentLocationStatus.permissionDenied:
+        return 'Izin lokasi ditolak (Klik izinkan)';
+      case CurrentLocationStatus.error:
+        return 'Gagal mendeteksi (Klik coba lagi)';
+    }
   }
 }

@@ -9,6 +9,8 @@ class ChatRoomModel {
   final String lastSeenText;
   final String serviceType;
   final bool isSupport;
+  final String orderStatus;
+  final DateTime? orderUpdatedAt;
 
   const ChatRoomModel({
     required this.id,
@@ -21,6 +23,8 @@ class ChatRoomModel {
     this.lastSeenText = 'Offline',
     this.serviceType = '',
     this.isSupport = false,
+    this.orderStatus = '',
+    this.orderUpdatedAt,
   });
 
   ChatRoomModel copyWith({
@@ -34,6 +38,8 @@ class ChatRoomModel {
     String? lastSeenText,
     String? serviceType,
     bool? isSupport,
+    String? orderStatus,
+    DateTime? orderUpdatedAt,
   }) {
     return ChatRoomModel(
       id: id ?? this.id,
@@ -46,6 +52,8 @@ class ChatRoomModel {
       lastSeenText: lastSeenText ?? this.lastSeenText,
       serviceType: serviceType ?? this.serviceType,
       isSupport: isSupport ?? this.isSupport,
+      orderStatus: orderStatus ?? this.orderStatus,
+      orderUpdatedAt: orderUpdatedAt ?? this.orderUpdatedAt,
     );
   }
 }

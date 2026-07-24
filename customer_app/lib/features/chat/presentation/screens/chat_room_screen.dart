@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/models/chat_room_model.dart';
@@ -110,11 +112,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       label: 'Kamera',
                       onTap: () {
                         Navigator.pop(context);
-                        ref.read(chatRoomMessagesProvider(widget.room.id).notifier).sendMediaMessage(
-                              MessageType.image,
-                              'Foto dari Kamera',
-                              'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=500',
-                            );
+                        ref.read(chatRoomMessagesProvider(widget.room.id).notifier).pickAndSendMedia(MessageType.image, ImageSource.camera);
                         _scrollToBottom();
                       },
                     ),
@@ -124,11 +122,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       label: 'Galeri Foto',
                       onTap: () {
                         Navigator.pop(context);
-                        ref.read(chatRoomMessagesProvider(widget.room.id).notifier).sendMediaMessage(
-                              MessageType.image,
-                              'Bukti struk / foto barang',
-                              'https://images.unsplash.com/photo-1584483766114-2cea6facdf57?w=500',
-                            );
+                        ref.read(chatRoomMessagesProvider(widget.room.id).notifier).pickAndSendMedia(MessageType.image, ImageSource.gallery);
                         _scrollToBottom();
                       },
                     ),
@@ -138,11 +132,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                       label: 'Video',
                       onTap: () {
                         Navigator.pop(context);
-                        ref.read(chatRoomMessagesProvider(widget.room.id).notifier).sendMediaMessage(
-                              MessageType.video,
-                              'Video kondisi barang',
-                              'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
-                            );
+                        ref.read(chatRoomMessagesProvider(widget.room.id).notifier).pickAndSendMedia(MessageType.video, ImageSource.gallery);
                         _scrollToBottom();
                       },
                     ),
@@ -228,6 +218,14 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatRoomMessagesProvider(widget.room.id));
+
+    bool isExpired = false;
+    if (widget.room.orderStatus == 'completed' && widget.room.orderUpdatedAt != null) {
+      final diff = DateTime.now().difference(widget.room.orderUpdatedAt!);
+      if (diff.inHours >= 6) {
+        isExpired = true;
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -383,103 +381,116 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           ),
 
           // ── Quick Reply Chips ──
-          Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: _quickReplies.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final reply = _quickReplies[index];
-                return GestureDetector(
-                  onTap: () => _sendQuickReply(reply),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+          if (isExpired)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Colors.red.shade50,
+              child: const Text(
+                'Sesi chat telah berakhir (melewati batas 6 jam setelah pesanan selesai).',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.red, fontSize: 13),
+              ),
+            )
+          else ...[
+            Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: _quickReplies.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final reply = _quickReplies[index];
+                  return GestureDetector(
+                    onTap: () => _sendQuickReply(reply),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        reply,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      reply,
-                      style: const TextStyle(
+                  );
+                },
+              ),
+            ),
+
+            // ── Input Bar with Attachment (+) Button ──
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Attachment (+) button
+                  IconButton(
+                    onPressed: _showAttachmentBottomSheet,
+                    icon: const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 28),
+                    tooltip: 'Lampirkan Foto/Video',
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Text input field
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: TextField(
+                        controller: _messageController,
+                        textCapitalization: TextCapitalization.sentences,
+                        onSubmitted: (_) => _sendMessage(),
+                        decoration: const InputDecoration(
+                          hintText: 'Tulis pesan...',
+                          hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Send Button
+                  GestureDetector(
+                    onTap: _sendMessage,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
                         color: AppColors.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
-
-          // ── Input Bar with Attachment (+) Button ──
-          Container(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Attachment (+) button
-                IconButton(
-                  onPressed: _showAttachmentBottomSheet,
-                  icon: const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 28),
-                  tooltip: 'Lampirkan Foto/Video',
-                ),
-                const SizedBox(width: 4),
-
-                // Text input field
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: TextField(
-                      controller: _messageController,
-                      textCapitalization: TextCapitalization.sentences,
-                      onSubmitted: (_) => _sendMessage(),
-                      decoration: const InputDecoration(
-                        hintText: 'Tulis pesan...',
-                        hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Send Button
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -535,46 +546,56 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-            ] else if (message.messageType == MessageType.video) ...[
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(4),
+            ] else if (message.messageType == MessageType.video && message.mediaUrl != null) ...[
+              GestureDetector(
+                onTap: () async {
+                  final url = Uri.parse(message.mediaUrl!);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  }
+                },
+                child: Container(
+                  height: 140,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('Play Video', style: TextStyle(color: Colors.white, fontSize: 10)),
                         ),
-                        child: const Text('0:15 • Video', style: TextStyle(color: Colors.white, fontSize: 10)),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
             ],
 
             // Text
-            Text(
-              message.text,
-              style: TextStyle(
-                color: isMine ? Colors.white : AppColors.textPrimary,
-                fontSize: 14,
-                height: 1.3,
+            if (message.text.isNotEmpty) ...[
+              Text(
+                message.text,
+                style: TextStyle(
+                  color: isMine ? Colors.white : AppColors.textPrimary,
+                  fontSize: 14,
+                  height: 1.3,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
+              const SizedBox(height: 4),
+            ],
 
             // Timestamp and Status Checkmark
             Row(
