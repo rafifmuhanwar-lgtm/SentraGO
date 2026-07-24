@@ -1,5 +1,6 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/enums.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/appwrite_client.dart';
@@ -53,8 +54,29 @@ class AuthRepository {
         if ((userData['name'] as String).isEmpty && docData['name'] != null) {
           userData['name'] = docData['name'];
         }
-      } catch (_) {
-        // Document might not exist yet, ignore
+      } catch (e) {
+        // Document does not exist yet for this new user -> create initial document in database
+        final newUser = UserModel.fromJson(userData, appwriteUser.$id);
+        try {
+          await _databases.createDocument(
+            databaseId: AppConfig.appwriteDatabaseId,
+            collectionId: AppConfig.usersCollection,
+            documentId: appwriteUser.$id,
+            data: newUser.toJson(),
+          );
+        } catch (e) {
+          debugPrint('getCurrentUser - Error creating user doc: $e');
+          try {
+            await _databases.createDocument(
+              databaseId: AppConfig.appwriteDatabaseId,
+              collectionId: AppConfig.usersCollection,
+              documentId: appwriteUser.$id,
+              data: newUser.toJsonBasic(),
+            );
+          } catch (e2) {
+            debugPrint('getCurrentUser - Error creating basic user doc: $e2');
+          }
+        }
       }
 
       return UserModel.fromJson(userData, appwriteUser.$id);
@@ -73,9 +95,52 @@ class AuthRepository {
   }
 
   Future<void> signInWithGoogle() async {
-    await _account.createOAuth2Session(
-      provider: OAuthProvider.google,
-    );
+    if (kIsWeb) {
+      final currentOrigin = Uri.base.origin;
+      await _account.createOAuth2Session(
+        provider: OAuthProvider.google,
+        success: '$currentOrigin/#/main',
+        failure: '$currentOrigin/#/login',
+      );
+    } else {
+      final callbackUrl = 'appwrite-callback-${AppConfig.appwriteProjectId}://';
+      await _account.createOAuth2Session(
+        provider: OAuthProvider.google,
+        success: callbackUrl,
+        failure: callbackUrl,
+      );
+    }
+  }
+
+  Future<void> signInWithEmail({required String email, required String password}) async {
+    try {
+      await _account.createEmailPasswordSession(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> signUpWithEmail({required String name, required String email, required String password}) async {
+    try {
+      // Clear any lingering session first just in case
+      try {
+        await _account.deleteSession(sessionId: 'current');
+      } catch (_) {}
+
+      await _account.create(
+        userId: ID.unique(),
+        email: email,
+        password: password,
+        name: name,
+      );
+      // Auto login after sign up
+      await signInWithEmail(email: email, password: password);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<UserModel> saveUserToDatabase(UserModel user) async {
@@ -90,7 +155,7 @@ class AuthRepository {
           databaseId: AppConfig.appwriteDatabaseId,
           collectionId: AppConfig.usersCollection,
           documentId: user.id,
-          data: user.toJson(),
+          data: user.toJsonNonNull(),
         );
       } catch (e) {
         await _databases.createDocument(

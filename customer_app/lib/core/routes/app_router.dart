@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
@@ -8,7 +9,7 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/home/presentation/screens/main_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_form_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_summary_screen.dart';
-import '../../features/jastip/presentation/screens/jastip_success_screen.dart';
+import '../../features/order/presentation/screens/order_success_screen.dart';
 import '../../features/jastip/presentation/screens/delivery_address_screen.dart';
 import '../../features/chat/presentation/screens/chat_room_screen.dart';
 import '../../features/chat/domain/models/chat_room_model.dart';
@@ -26,11 +27,19 @@ import '../../features/profile/presentation/screens/about_app_screen.dart';
 import '../../features/profile/presentation/screens/notifications_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authStatus = ref.watch(authStateProvider.select((s) => s.status));
+  // Create a listenable to trigger router refreshes on auth state change
+  final authStateNotifier = ValueNotifier<AuthStatus>(AuthStatus.initial);
+  
+  ref.listen(authStateProvider.select((s) => s.status), (previous, next) {
+    authStateNotifier.value = next;
+  });
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: authStateNotifier,
     redirect: (context, state) {
+      final authStatus = ref.read(authStateProvider).status;
+      
       final isSplash = state.matchedLocation == '/';
       final isLocation = state.matchedLocation == '/location';
       final isLogin = state.matchedLocation == '/login';
@@ -42,13 +51,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // Allow location selection before login
       if (isLocation) return null;
 
-      // If authenticated and on login, go to main
-      if (authStatus == AuthStatus.authenticated && isLogin) {
+      // While loading/initial, don't redirect — wait for auth to resolve
+      if (authStatus == AuthStatus.initial || authStatus == AuthStatus.loading) {
+        return null;
+      }
+
+      // If authenticated and on login/auth route, go to main
+      if (authStatus == AuthStatus.authenticated && isAuthRoute) {
         return '/main';
       }
 
-      // If unauthenticated and not on an auth route, redirect to login
-      if (authStatus == AuthStatus.unauthenticated && !isAuthRoute) {
+      // If unauthenticated or error and not on an auth route, redirect to login
+      if ((authStatus == AuthStatus.unauthenticated || authStatus == AuthStatus.error) && !isAuthRoute) {
         return '/login';
       }
 
@@ -84,7 +98,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/jastip/success',
-        builder: (context, state) => const JastipSuccessScreen(),
+        builder: (context, state) {
+          final order = state.extra as OrderModel?;
+          return OrderSuccessScreen(order: order);
+        },
       ),
       GoRoute(
         path: '/jastip/delivery-address',

@@ -44,20 +44,15 @@ class AuthNotifier extends Notifier<AuthState> {
     final repository = ref.read(authRepositoryProvider);
     try {
       final user = await repository.getCurrentUser();
-      print("AUTH DEBUG - User fetched: $user");
       if (user != null) {
-        // Save/update user in database on session restore
-        print("AUTH DEBUG - Saving user to database...");
-        await repository.saveUserToDatabase(user);
-        print("AUTH DEBUG - Saved user to database successfully.");
+        // Do NOT call saveUserToDatabase here — it may overwrite existing profile data
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
       } else {
-        print("AUTH DEBUG - User is null");
         state = state.copyWith(status: AuthStatus.unauthenticated);
       }
     } catch (e, stacktrace) {
-      print("AUTH ERROR in checkAuthStatus: $e");
-      print("AUTH STACKTRACE: $stacktrace");
+      print('AUTH ERROR in checkAuthStatus: $e');
+      print('AUTH STACKTRACE: $stacktrace');
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
   }
@@ -67,10 +62,22 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final repository = ref.read(authRepositoryProvider);
       await repository.signInWithGoogle();
-      // After OAuth redirect, the app will be re-opened
-      // checkAuthStatus will be called to detect the new session
-      await checkAuthStatus();
+      // Retry checkAuthStatus after OAuth — session may need a moment to propagate
+      bool authenticated = false;
+      for (int i = 0; i < 3; i++) {
+        await checkAuthStatus();
+        if (state.status == AuthStatus.authenticated) {
+          authenticated = true;
+          break;
+        }
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      if (!authenticated) {
+        print('AUTH DEBUG - signInWithGoogle: session not ready after retries');
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+      }
     } catch (e) {
+      print('AUTH ERROR in signInWithGoogle: $e');
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
@@ -83,6 +90,37 @@ class AuthNotifier extends Notifier<AuthState> {
     await checkAuthStatus();
   }
 
+  Future<void> signInWithEmail(String email, String password) async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      await repository.signInWithEmail(email: email, password: password);
+      await checkAuthStatus();
+    } catch (e) {
+      print('AUTH ERROR in signInWithEmail: $e');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Login Gagal: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<void> signUpWithEmail(String name, String email, String password) async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      await repository.signUpWithEmail(name: name, email: email, password: password);
+      await checkAuthStatus();
+    } catch (e) {
+      print('AUTH ERROR in signUpWithEmail: $e');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Register Gagal: ${e.toString()}',
+      );
+    }
+  }
+
+
   Future<void> logout() async {
     final repository = ref.read(authRepositoryProvider);
     await repository.logout();
@@ -93,6 +131,7 @@ class AuthNotifier extends Notifier<AuthState> {
     required String name,
     String? phone,
     String? selectedArea,
+    String? photoUrl,
   }) async {
     if (state.user == null) return;
     try {
@@ -100,6 +139,7 @@ class AuthNotifier extends Notifier<AuthState> {
         name: name,
         phone: phone,
         selectedArea: selectedArea,
+        photoUrl: photoUrl ?? state.user!.photoUrl,
       );
       final repository = ref.read(authRepositoryProvider);
       final savedUser = await repository.updateUserProfile(updatedUser);

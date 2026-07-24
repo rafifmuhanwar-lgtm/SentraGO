@@ -21,8 +21,19 @@ class OrderRepository {
 
     try {
       final docs = await _databaseService.getUserOrders(_userId);
-      return docs.map((doc) => OrderModel.fromJson(doc)).toList();
+      print('DEBUG: Parsing ${docs.length} order documents...');
+      final List<OrderModel> orders = [];
+      for (final doc in docs) {
+        try {
+          orders.add(OrderModel.fromJson(doc));
+        } catch (e) {
+          print('DEBUG: Failed to parse order doc ${doc['\$id']}: $e');
+        }
+      }
+      print('DEBUG: Successfully parsed ${orders.length} orders');
+      return orders;
     } catch (e) {
+      print('DEBUG: getOrders error: $e');
       return [];
     }
   }

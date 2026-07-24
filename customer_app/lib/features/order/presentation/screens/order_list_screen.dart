@@ -369,7 +369,7 @@ class _OrderCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Kurir: ${order.courierName}',
+                        'Kurir: ${order.courierName.isEmpty ? 'Mencari Kurir...' : order.courierName}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),

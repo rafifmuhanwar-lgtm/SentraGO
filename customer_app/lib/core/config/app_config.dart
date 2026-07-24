@@ -11,6 +11,7 @@ class AppConfig {
   static const String usersCollection = 'users';
   static const String ordersCollection = 'orders';
   static const String chatsCollection = 'chats';
+  static const String couriersCollection = 'couriers';
 
   // Appwrite Storage Bucket IDs
   // TODO: Ganti dengan Bucket ID kamu dari Appwrite Console
@@ -19,6 +20,9 @@ class AppConfig {
   // Appwrite OAuth Redirect URLs
   static const String oauthSuccessRedirect = 'appwrite-custom-6a5a2ab80012a3e5860a://success';
   static const String oauthFailureRedirect = 'appwrite-custom-6a5a2ab80012a3e5860a://failure';
+
+  // Port untuk Flutter Web dev server (sesuaikan jika beda)
+  static const int webPort = 57552;
 
   // ── Pakasir Payment Gateway ──
   // TODO: Ganti dengan API Key dan Slug dari Pakasir Dashboard

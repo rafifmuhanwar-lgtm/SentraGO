@@ -42,6 +42,26 @@ class UserModel {
     };
   }
 
+  Map<String, dynamic> toJsonBasic() {
+    return {
+      'name': name,
+      'email': email,
+      'phone': phone ?? '',
+      'photoUrl': photoUrl,
+    };
+  }
+
+  Map<String, dynamic> toJsonNonNull() {
+    final map = <String, dynamic>{};
+    if (name.isNotEmpty) map['name'] = name;
+    if (email.isNotEmpty) map['email'] = email;
+    if (phone != null) map['phone'] = phone;
+    if (photoUrl != null) map['photoUrl'] = photoUrl;
+    if (selectedArea != null) map['selectedArea'] = selectedArea;
+    map['createdAt'] = createdAt.toIso8601String();
+    return map;
+  }
+
   UserModel copyWith({
     String? name,
     String? email,
