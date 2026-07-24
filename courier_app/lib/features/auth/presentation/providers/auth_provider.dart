@@ -47,18 +47,13 @@ class AuthNotifier extends Notifier<AuthState> {
       final courier = await repository.getCurrentCourier();
       debugPrint('AUTH DEBUG - Courier fetched: $courier');
       if (courier != null) {
-        debugPrint('AUTH DEBUG - Saving courier to database...');
-        try {
-          await repository.saveCourierToDatabase(courier);
-          debugPrint('AUTH DEBUG - Save successful');
-        } catch (e) {
-          // Save may fail if collection schema doesn't have all courier fields yet
-          // But session is still valid — proceed with authenticated state
-          debugPrint('AUTH DEBUG - Save skipped (non-critical): $e');
-        }
+        debugPrint('AUTH DEBUG - Courier authenticated: name=${courier.name}, vehicle=${courier.vehicleType}, area=${courier.selectedArea}, kyc=${courier.kycVerified}');
+        // Do NOT call saveCourierToDatabase here — it would overwrite existing
+        // profile data (vehicleType, selectedArea, kycVerified) with null values.
+        // saveCourierToDatabase should only be called on first registration.
         state = state.copyWith(status: AuthStatus.authenticated, courier: courier);
       } else {
-        debugPrint('AUTH DEBUG - Courier is null');
+        debugPrint('AUTH DEBUG - Courier is null / no active session');
         state = state.copyWith(status: AuthStatus.unauthenticated);
       }
     } catch (e, stacktrace) {
@@ -72,15 +67,27 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
     try {
       final repository = ref.read(authRepositoryProvider);
-      // Hapus session sebelumnya biar gak bentrok
-      try {
-        await repository.logout();
-      } catch (_) {}
       await repository.signInWithGoogle();
-      // After OAuth redirect, the app will be re-opened
-      // checkAuthStatus will be called to detect the new session
-      await checkAuthStatus();
+      // After OAuth callback, session may need a brief moment to be valid.
+      // Retry checkAuthStatus up to 3 times with a short delay.
+      if (!kIsWeb) {
+        bool authenticated = false;
+        for (int i = 0; i < 3; i++) {
+          await checkAuthStatus();
+          if (state.status == AuthStatus.authenticated) {
+            authenticated = true;
+            break;
+          }
+          // Wait before retrying to allow session to propagate
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+        if (!authenticated) {
+          debugPrint('AUTH DEBUG - signInWithGoogle: session not ready after retries');
+          state = state.copyWith(status: AuthStatus.unauthenticated);
+        }
+      }
     } catch (e) {
+      debugPrint('AUTH ERROR in signInWithGoogle: $e');
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
@@ -91,6 +98,36 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> handleOAuthRedirect() async {
     // Called after app is re-opened from OAuth redirect
     await checkAuthStatus();
+  }
+
+  Future<void> signInWithEmail(String email, String password) async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      await repository.signInWithEmail(email: email, password: password);
+      await checkAuthStatus();
+    } catch (e) {
+      debugPrint('AUTH ERROR in signInWithEmail: $e');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Login Gagal: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<void> signUpWithEmail(String name, String email, String password) async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      await repository.signUpWithEmail(name: name, email: email, password: password);
+      await checkAuthStatus();
+    } catch (e) {
+      debugPrint('AUTH ERROR in signUpWithEmail: $e');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Register Gagal: ${e.toString()}',
+      );
+    }
   }
 
   void completeKyc() {

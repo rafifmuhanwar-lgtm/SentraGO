@@ -79,17 +79,17 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
       final paymentToCourier = totalBelanjaStruk + ongkir;
 
       // Upload foto struk ke Appwrite Storage
-      await _uploadStruk(_strukImage!);
-
-      // Update order dengan data settlement
+      final uploadedId = await _uploadStruk(_strukImage!);
+      final imageUrl = 'https://sgp.cloud.appwrite.io/v1/storage/buckets/${AppConfig.storageBucketId}/files/$uploadedId/view?project=${AppConfig.appwriteProjectId}';
+      // Update order dengan data settlement (status tetap ongoing)
       await ref.read(databaseServiceProvider).updateOrderStatus(
         widget.order.id,
-        'completed',
+        'ongoing',
         extraData: {
-          'statusText': 'Selesai',
+          'statusText': 'Barang Dibeli',
+          'strukImageUrl': imageUrl,
           'totalBelanjaStruk': totalBelanjaStruk,
           'refundCustomer': refundCustomer,
-          'paymentToCourier': paymentToCourier,
         },
       );
 
@@ -108,7 +108,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
               Icon(Icons.check_circle, color: AppColors.success, size: 28),
               SizedBox(width: 10),
               Text(
-                'Settlement Berhasil',
+                'Upload Struk Berhasil',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,

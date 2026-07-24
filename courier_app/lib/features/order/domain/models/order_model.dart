@@ -19,6 +19,15 @@ class OrderModel {
   final double? pickupLng;
   final double? dropoffLat;
   final double? dropoffLng;
+  final double? courierLat;
+  final double? courierLng;
+  final String statusText;
+  final DateTime? updatedAt;
+  final String? strukImageUrl;
+  final String? deliveryProofUrl;
+  final double? totalBelanjaStruk;
+  final double? refundCustomer;
+  final String kebijakanLebih;
 
   const OrderModel({
     required this.id,
@@ -39,6 +48,15 @@ class OrderModel {
     this.pickupLng,
     this.dropoffLat,
     this.dropoffLng,
+    this.courierLat,
+    this.courierLng,
+    this.statusText = '',
+    this.updatedAt,
+    this.strukImageUrl,
+    this.deliveryProofUrl,
+    this.totalBelanjaStruk,
+    this.refundCustomer,
+    this.kebijakanLebih = 'jangan_lebih',
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +82,15 @@ class OrderModel {
       pickupLng: (json['pickupLng'] as num?)?.toDouble(),
       dropoffLat: (json['dropoffLat'] as num?)?.toDouble(),
       dropoffLng: (json['dropoffLng'] as num?)?.toDouble(),
+      courierLat: (json['courierLat'] as num?)?.toDouble(),
+      courierLng: (json['courierLng'] as num?)?.toDouble(),
+      statusText: json['statusText'] ?? '',
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
+      strukImageUrl: json['strukImageUrl'],
+      deliveryProofUrl: json['deliveryProofUrl'],
+      totalBelanjaStruk: (json['totalBelanjaStruk'] as num?)?.toDouble(),
+      refundCustomer: (json['refundCustomer'] as num?)?.toDouble(),
+      kebijakanLebih: json['kebijakanLebih'] ?? 'jangan_lebih',
     );
   }
 
@@ -87,6 +114,15 @@ class OrderModel {
       'pickupLng': pickupLng,
       'dropoffLat': dropoffLat,
       'dropoffLng': dropoffLng,
+      'courierLat': courierLat,
+      'courierLng': courierLng,
+      'statusText': statusText,
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+      if (strukImageUrl != null) 'strukImageUrl': strukImageUrl,
+      if (deliveryProofUrl != null) 'deliveryProofUrl': deliveryProofUrl,
+      if (totalBelanjaStruk != null) 'totalBelanjaStruk': totalBelanjaStruk,
+      if (refundCustomer != null) 'refundCustomer': refundCustomer,
+      'kebijakanLebih': kebijakanLebih,
     };
   }
 
@@ -109,6 +145,15 @@ class OrderModel {
     double? pickupLng,
     double? dropoffLat,
     double? dropoffLng,
+    double? courierLat,
+    double? courierLng,
+    String? statusText,
+    DateTime? updatedAt,
+    String? strukImageUrl,
+    String? deliveryProofUrl,
+    double? totalBelanjaStruk,
+    double? refundCustomer,
+    String? kebijakanLebih,
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -129,6 +174,15 @@ class OrderModel {
       pickupLng: pickupLng ?? this.pickupLng,
       dropoffLat: dropoffLat ?? this.dropoffLat,
       dropoffLng: dropoffLng ?? this.dropoffLng,
+      courierLat: courierLat ?? this.courierLat,
+      courierLng: courierLng ?? this.courierLng,
+      statusText: statusText ?? this.statusText,
+      updatedAt: updatedAt ?? this.updatedAt,
+      strukImageUrl: strukImageUrl ?? this.strukImageUrl,
+      deliveryProofUrl: deliveryProofUrl ?? this.deliveryProofUrl,
+      totalBelanjaStruk: totalBelanjaStruk ?? this.totalBelanjaStruk,
+      refundCustomer: refundCustomer ?? this.refundCustomer,
+      kebijakanLebih: kebijakanLebih ?? this.kebijakanLebih,
     );
   }
 }

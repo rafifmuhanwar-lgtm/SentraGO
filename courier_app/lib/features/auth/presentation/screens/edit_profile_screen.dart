@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../../../core/services/database_service.dart';
 import '../providers/auth_provider.dart';
-
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -19,6 +21,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _vehicleType;
   String? _selectedArea;
   bool _isSaving = false;
+  XFile? _newProfileImage;
 
   static const _vehicleTypes = ['Motor', 'Mobil', 'Sepeda'];
   static const _areaOptions = [
@@ -28,7 +31,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     'Jakarta Selatan',
     'Jakarta Timur',
     'Tangerang',
-    'Bekasi',
+    'Kota Bekasi',
+    'Kabupaten Bekasi',
     'Depok',
     'Bogor',
   ];
@@ -61,12 +65,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final current = ref.read(authStateProvider).courier;
       if (current == null) return;
 
+      String? uploadedPhotoUrl;
+      if (_newProfileImage != null) {
+        uploadedPhotoUrl = await ref.read(databaseServiceProvider).uploadProfileImage(
+          _newProfileImage!.path,
+          _newProfileImage!.name,
+        );
+      }
+
       final updated = current.copyWith(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         vehicleType: _vehicleType,
         vehiclePlate: _plateController.text.trim().toUpperCase(),
         selectedArea: _selectedArea,
+        photoUrl: uploadedPhotoUrl ?? current.photoUrl,
       );
 
       await ref.read(authStateProvider.notifier).updateCourierProfile(updated);
@@ -115,25 +128,52 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               Center(
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      backgroundImage: courier?.photoUrl != null
-                          ? NetworkImage(courier!.photoUrl!)
-                          : null,
-                      child: courier?.photoUrl == null
-                          ? Text(
-                              (courier?.name.isNotEmpty == true
-                                      ? courier!.name[0]
-                                      : 'K')
-                                  .toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
+                    GestureDetector(
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                        if (image != null) {
+                          setState(() {
+                            _newProfileImage = image;
+                          });
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 48,
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                            backgroundImage: _newProfileImage != null
+                                ? FileImage(File(_newProfileImage!.path)) as ImageProvider
+                                : (courier?.photoUrl != null ? NetworkImage(courier!.photoUrl!) : null),
+                            child: (_newProfileImage == null && courier?.photoUrl == null)
+                                ? Text(
+                                    (courier?.name.isNotEmpty == true
+                                            ? courier!.name[0]
+                                            : 'K')
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
                                 color: AppColors.primary,
+                                shape: BoxShape.circle,
                               ),
-                            )
-                          : null,
+                              child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(

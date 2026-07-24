@@ -8,9 +8,10 @@ class AppConfig {
 
   // ── Appwrite Collection IDs ──
   static const String usersCollection = 'users';
-  static const String couriersCollection = 'users'; // Same collection, role-based
+  static const String couriersCollection = 'couriers'; // Separate collection for couriers
   static const String ordersCollection = 'orders';
   static const String chatsCollection = 'chats';
+  static const String withdrawalsCollection = 'withdrawals';
 
   // ── Appwrite Storage Bucket IDs ──
   static const String storageBucketId = '6a5d565700192c93077a';
