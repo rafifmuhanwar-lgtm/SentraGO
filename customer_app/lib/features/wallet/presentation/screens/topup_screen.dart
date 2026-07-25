@@ -8,6 +8,9 @@ import '../../../../core/services/pakasir_service.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../providers/wallet_provider.dart';
 import '../../domain/models/wallet_model.dart';
+import '../../../notification/presentation/providers/notification_provider.dart';
+import '../../../notification/domain/services/push_notification_sender.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class TopUpScreen extends ConsumerStatefulWidget {
   const TopUpScreen({super.key});
@@ -153,6 +156,22 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
               paymentMethod: _selectedMethod,
               pakasirOrderId: orderId,
             );
+
+            // Create notification
+            ref.read(notificationsProvider.notifier).createNotification(
+              userId: ref.read(authStateProvider).user?.id ?? '',
+              title: 'Top Up SentraPay Berhasil 💳',
+              body: 'Saldo SentraPay Wallet bertambah Rp ${_formatRupiah(amount.toDouble())}.',
+              category: 'Sistem & Akun',
+              routeName: '/profile/payment',
+            );
+
+            // Send push notification
+            final sender = ref.read(pushNotificationSenderProvider);
+            await sender.sendTopUpSuccess(
+              userId: ref.read(authStateProvider).user?.id ?? '',
+              amount: amount.toDouble(),
+            );
           }
 
           if (mounted) {
@@ -161,7 +180,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Top up Rp ${amount.toString()} berhasil! 🎉'),
+                content: Text('Top up Rp ${_formatRupiah(amount)} berhasil! 🎉'),
                 backgroundColor: AppColors.success,
               ),
             );
@@ -218,6 +237,22 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
         pakasirOrderId: _paymentOrderId!,
       );
 
+      // Create notification
+      ref.read(notificationsProvider.notifier).createNotification(
+        userId: ref.read(authStateProvider).user?.id ?? '',
+        title: 'Top Up SentraPay Berhasil 💳',
+        body: 'Saldo SentraPay Wallet bertambah Rp ${_formatRupiah(amountToAdd)}.',
+        category: 'Sistem & Akun',
+        routeName: '/profile/payment',
+      );
+
+      // Send push
+      final sender = ref.read(pushNotificationSenderProvider);
+      await sender.sendTopUpSuccess(
+        userId: ref.read(authStateProvider).user?.id ?? '',
+        amount: amountToAdd,
+      );
+
       // Step 3: Refresh balance
       ref.read(walletBalanceProvider.notifier).refresh();
 
@@ -240,6 +275,11 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
         );
       }
     }
+  }
+
+  String _formatRupiah(dynamic amount) {
+    final amt = (amount is double ? amount : double.tryParse(amount.toString()) ?? 0).toInt();
+    return amt.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
   }
 
   @override
@@ -292,7 +332,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Rp ${wallet.balance.toStringAsFixed(0)}',
+                'Rp ${_formatRupiah(wallet.balance)}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -322,7 +362,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
           children: [20000, 50000, 100000, 200000, 500000].map((amount) {
             final isSelected = !_useCustomAmount && _selectedAmount == amount;
             return ChoiceChip(
-              label: Text('Rp ${amount.toStringAsFixed(0)}'),
+              label: Text('Rp ${_formatRupiah(amount)}'),
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
@@ -359,9 +399,23 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
             hintText: 'Nominal Lainnya',
           ),
           onChanged: (val) {
-            final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9]'), ''));
+            final cleaned = val.replaceAll(RegExp(r'[^0-9]'), '');
+            final parsed = double.tryParse(cleaned);
             if (parsed != null && parsed > 0) {
               setState(() => _useCustomAmount = true);
+            }
+            // Format dengan titik (ribuan)
+            if (cleaned.isNotEmpty) {
+              final formatted = cleaned.replaceAllMapped(
+                RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+                (m) => '${m[1]}.',
+              );
+              if (formatted != _customAmountController.text) {
+                _customAmountController.value = TextEditingValue(
+                  text: formatted,
+                  selection: TextSelection.collapsed(offset: formatted.length),
+                );
+              }
             }
           },
         ),
@@ -378,55 +432,99 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Method list
-        ..._methods.map((method) {
-          final isSelected = _selectedMethod == method['id'];
-          return GestureDetector(
-            onTap: () => setState(() => _selectedMethod = method['id'] as String),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.border,
-                  width: isSelected ? 1.5 : 1,
-                ),
+        // QRIS Card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Row(
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header QRIS
+              Row(
                 children: [
-                  Icon(
-                    isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                    size: 22,
+                  // QR Code Icon
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.qr_code_rounded,
+                      size: 30,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          method['name'] as String,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        const Text(
+                          'QRIS',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          method['subtitle'] as String,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          'Semua E-Wallet & Mobile Banking',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Badge "Terpopuler"
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star, size: 12, color: AppColors.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'TERPOPULER',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-            ),
-          );
-        }),
+              const SizedBox(height: 14),
+              const Divider(color: AppColors.border, height: 1),
+              ],
+          ),
+        ),
         const SizedBox(height: 8),
 
         Text(
-          '*Biaya transaksi sesuai ketentuan Pakasir dan akan ditambahkan ke total pembayaran',
+          '*Biaya transaksi sesuai ketentuan SentraGO dan akan ditambahkan ke total pembayaran',
           style: TextStyle(
             fontSize: 11,
             color: AppColors.textSecondary.withValues(alpha: 0.7),
@@ -524,7 +622,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
         const SizedBox(height: 8),
 
         Text(
-          'Total Pembayaran: Rp ${_paymentTotal ?? 0}',
+          'Total Pembayaran: Rp ${_formatRupiah(_paymentTotal ?? 0)}',
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,

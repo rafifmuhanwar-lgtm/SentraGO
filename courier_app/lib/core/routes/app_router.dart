@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/help_center_screen.dart';
@@ -54,9 +55,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final isSplash = location == '/splash';
       final isLogin = location == '/login';
+      final isRegister = location == '/register';
       final isOnboarding = location == '/onboarding';
       final isKyc = location == '/kyc';
-      final isAuthRoute = isSplash || isLogin || isOnboarding || isKyc;
+      final isAuthRoute = isSplash || isLogin || isRegister || isOnboarding || isKyc;
 
       if (isSplash) {
         if (isChecking) return null;
@@ -92,6 +94,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/onboarding',

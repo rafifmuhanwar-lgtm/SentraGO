@@ -1,0 +1,56 @@
+# SentraGO 🚚
+
+Platform layanan on-demand untuk pengiriman barang dan jasa. Terdiri dari 3 aplikasi:
+
+| Aplikasi | Teknologi | Deskripsi |
+|---|---|---|
+| [**Customer App**](customer_app/) | Flutter | Aplikasi untuk pelanggan memesan jasa |
+| [**Courier App**](courier_app/) | Flutter | Aplikasi untuk kurir menerima & mengelola order |
+| [**Dashboard Admin**](Dashboard%20Sentra/) | HTML/CSS/JS | Panel admin berbasis web (statis) |
+
+## 📁 Struktur Monorepo
+
+```
+SENTRAGO/
+├── .claude/              # Claude AI config
+├── .vscode/              # VS Code settings
+├── Dashboard Sentra/     # Admin web panel
+├── courier_app/          # Courier Flutter app
+├── customer_app/         # Customer Flutter app
+├── .env.example          # Template environment variables
+└── README.md             # This file
+```
+
+## 🚀 Quick Start
+
+### 1. Setup Environment
+
+```bash
+cp .env.example courier_app/.env
+cp .env.example customer_app/.env
+# Isi nilai-nilai yang diperlukan
+```
+
+### 2. Jalankan Aplikasi
+
+```bash
+# Customer App
+cd customer_app && flutter pub get && flutter run
+
+# Courier App
+cd courier_app && flutter pub get && flutter run
+```
+
+### 3. Dashboard Admin
+
+Buka `Dashboard Sentra/dashboard.html` di browser.
+
+## 🔐 Keamanan
+
+- Jangan commit file `.env` — sudah di `.gitignore`
+- API key Pakasir, Appwrite, dan Mapbox diambil dari environment variables
+- Lihat `.env.example` untuk variabel yang dibutuhkan
+
+---
+
+© SentraGO

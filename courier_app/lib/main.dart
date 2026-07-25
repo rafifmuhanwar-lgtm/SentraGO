@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/routes/app_router.dart';
 import 'core/constants/app_themes.dart';
-import 'features/auth/presentation/providers/auth_provider.dart';
+import 'core/config/app_config.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppConfig.load();
   runApp(const ProviderScope(child: SentraCourierApp()));
 }
 
@@ -17,7 +18,7 @@ class SentraCourierApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'SentraGO Courier',
+      title: 'SentraGo Driver',
       theme: AppThemes.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

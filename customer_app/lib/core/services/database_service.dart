@@ -2,6 +2,7 @@ import 'package:appwrite/appwrite.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
 import 'appwrite_client.dart';
+import '../../features/notification/domain/models/notification_model.dart';
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
   return DatabaseService(
@@ -418,6 +419,90 @@ class DatabaseService {
       return docs.documents.map((doc) => {...doc.data, '\$id': doc.$id}).toList();
     } catch (e) {
       return [];
+    }
+  }
+
+  // ─── Notification Methods ───
+
+  Future<void> createNotification(NotificationModel notification) async {
+    await _databases.createDocument(
+      databaseId: AppConfig.appwriteDatabaseId,
+      collectionId: AppConfig.notificationsCollection,
+      documentId: notification.id,
+      data: notification.toMap(),
+    );
+  }
+
+  Future<List<NotificationModel>> getUserNotifications(String userId) async {
+    try {
+      final docs = await _databases.listDocuments(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        queries: [
+          Query.equal('userId', userId),
+          Query.orderDesc('createdAt'),
+          Query.limit(50),
+        ],
+      );
+      return docs.documents
+          .map((doc) => NotificationModel.fromMap(doc.data, doc.$id))
+          .toList();
+    } catch (e) {
+      print('getUserNotifications error: $e');
+      return [];
+    }
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    try {
+      await _databases.updateDocument(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        documentId: notificationId,
+        data: {'isRead': true},
+      );
+    } catch (e) {
+      print('markNotificationAsRead error: $e');
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    try {
+      final docs = await _databases.listDocuments(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        queries: [
+          Query.equal('userId', userId),
+          Query.equal('isRead', false),
+        ],
+      );
+      for (var doc in docs.documents) {
+        await _databases.updateDocument(
+          databaseId: AppConfig.appwriteDatabaseId,
+          collectionId: AppConfig.notificationsCollection,
+          documentId: doc.$id,
+          data: {'isRead': true},
+        );
+      }
+    } catch (e) {
+      print('markAllNotificationsAsRead error: $e');
+    }
+  }
+
+  Future<int> getUnreadNotificationCount(String userId) async {
+    try {
+      final docs = await _databases.listDocuments(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        queries: [
+          Query.equal('userId', userId),
+          Query.equal('isRead', false),
+          Query.limit(1),
+        ],
+      );
+      return docs.total;
+    } catch (e) {
+      return 0;
     }
   }
 }

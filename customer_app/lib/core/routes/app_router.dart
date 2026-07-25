@@ -5,6 +5,7 @@ import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/wallet/presentation/screens/topup_screen.dart';
 import '../../features/location/presentation/screens/location_selection_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/home/presentation/screens/main_screen.dart';
 import '../../features/jastip/presentation/screens/jastip_form_screen.dart';
@@ -43,7 +44,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isSplash = state.matchedLocation == '/';
       final isLocation = state.matchedLocation == '/location';
       final isLogin = state.matchedLocation == '/login';
-      final isAuthRoute = isSplash || isLocation || isLogin;
+      final isRegister = state.matchedLocation == '/register';
+      final isAuthRoute = isSplash || isLocation || isLogin || isRegister;
 
       // Allow splash screen to handle its own flow
       if (isSplash) return null;
@@ -80,6 +82,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/main',

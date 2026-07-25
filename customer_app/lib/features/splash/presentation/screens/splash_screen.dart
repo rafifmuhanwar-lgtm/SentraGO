@@ -74,7 +74,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Sentra',
+                    'SentraGo',
                     style: TextStyle(
                       color: AppColors.textLight,
                       fontSize: 32,

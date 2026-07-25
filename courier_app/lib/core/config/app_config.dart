@@ -1,28 +1,40 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConfig {
   AppConfig._();
 
+  /// Load environment variables from .env file.
+  /// Call once at startup (e.g. in main() before runApp).
+  static Future<void> load() => dotenv.load();
+
   // ── Appwrite ──
-  static const String appwriteEndpoint = 'https://sgp.cloud.appwrite.io/v1';
-  static const String appwriteProjectId = '6a5a2ab80012a3e5860a';
-  static const String appwriteDatabaseId = '6a5a2cca002aaa8dd6f8';
+  static String get appwriteEndpoint =>
+      dotenv.env['APPWRITE_ENDPOINT'] ?? 'https://sgp.cloud.appwrite.io/v1';
+  static String get appwriteProjectId =>
+      dotenv.env['APPWRITE_PROJECT_ID'] ?? '6a5a2ab80012a3e5860a';
+  static String get appwriteDatabaseId =>
+      dotenv.env['APPWRITE_DATABASE_ID'] ?? '6a5a2cca002aaa8dd6f8';
 
   // ── Appwrite Collection IDs ──
   static const String usersCollection = 'users';
-  static const String couriersCollection = 'couriers'; // Separate collection for couriers
+  static const String couriersCollection = 'couriers';
   static const String ordersCollection = 'orders';
   static const String chatsCollection = 'chats';
   static const String withdrawalsCollection = 'withdrawals';
 
   // ── Appwrite Storage Bucket IDs ──
-  static const String storageBucketId = '6a5d565700192c93077a';
+  static String get storageBucketId =>
+      dotenv.env['APPWRITE_STORAGE_BUCKET_ID'] ?? '6a5d565700192c93077a';
 
   // ── Appwrite OAuth Redirect URLs ──
-  static const String oauthSuccessRedirect = 'appwrite-custom-6a5a2ab80012a3e5860a://success';
-  static const String oauthFailureRedirect = 'appwrite-custom-6a5a2ab80012a3e5860a://failure';
+  static String get oauthSuccessRedirect =>
+      dotenv.env['APPWRITE_OAUTH_SUCCESS_REDIRECT'] ??
+      'appwrite-custom-6a5a2ab80012a3e5860a://success';
+  static String get oauthFailureRedirect =>
+      dotenv.env['APPWRITE_OAUTH_FAILURE_REDIRECT'] ??
+      'appwrite-custom-6a5a2ab80012a3e5860a://failure';
 
   // ── Mapbox ──
-  // Token dibaca dari --dart-define=MAPBOX_ACCESS_TOKEN=...
-  // (bisa dari .env atau environment variable)
-  static const String mapboxAccessToken =
-      String.fromEnvironment('MAPBOX_ACCESS_TOKEN', defaultValue: '');
+  static String get mapboxAccessToken =>
+      dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 }

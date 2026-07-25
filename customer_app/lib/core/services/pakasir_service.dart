@@ -110,47 +110,5 @@ class PakasirService {
       'icon': 'qr_code',
       'subtitle': 'Semua E-Wallet & Mobile Banking',
     },
-    {
-      'id': 'bni_va',
-      'name': 'BNI Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer BNI',
-    },
-    {
-      'id': 'bri_va',
-      'name': 'BRI Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer BRI',
-    },
-    {
-      'id': 'cimb_niaga_va',
-      'name': 'CIMB Niaga Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer CIMB Niaga',
-    },
-    {
-      'id': 'mandiri_va',
-      'name': 'Mandiri Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer Mandiri',
-    },
-    {
-      'id': 'maybank_va',
-      'name': 'Maybank Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer Maybank',
-    },
-    {
-      'id': 'permata_va',
-      'name': 'Permata Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer Permata',
-    },
-    {
-      'id': 'atm_bersama_va',
-      'name': 'ATM Bersama Virtual Account',
-      'icon': 'account_balance',
-      'subtitle': 'Transfer via ATM Bersama',
-    },
   ];
 }

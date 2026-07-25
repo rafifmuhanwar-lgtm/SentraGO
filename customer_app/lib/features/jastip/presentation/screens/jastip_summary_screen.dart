@@ -15,6 +15,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../../wallet/data/repositories/wallet_repository.dart';
 import '../../../wallet/presentation/providers/wallet_provider.dart';
+import '../../../notification/presentation/providers/notification_provider.dart';
+import '../../../notification/domain/services/push_notification_sender.dart';
 
 class JastipSummaryScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> data;
@@ -620,15 +622,40 @@ class _JastipSummaryScreenState extends ConsumerState<JastipSummaryScreen> {
       // Refresh wallet balance
       ref.read(walletBalanceProvider.notifier).refresh();
 
+      // Create notification & send push
+      if (context.mounted) {
+        final userId = ref.read(authStateProvider).user?.id ?? '';
+        ref.read(notificationsProvider.notifier).createNotification(
+          userId: userId,
+          title: 'Pesanan Jastip Dibuat 📦',
+          body: 'Pesanan Jastip Belanja Anda telah berhasil dibuat. Kurir akan segera diproses.',
+          category: 'Pesanan',
+          routeName: '/tracking',
+        );
+
+        final sender = ref.read(pushNotificationSenderProvider);
+        await sender.sendToUser(
+          userId: userId,
+          title: 'Pesanan Jastip Dibuat 📦',
+          body: 'Pesanan Jastip Belanja Anda telah berhasil dibuat. Kurir akan segera diproses.',
+          category: 'Pesanan',
+          route: '/tracking',
+        );
+      }
+
       if (context.mounted) {
         context.go('/jastip/success', extra: newOrder);
       }
     } catch (e) {
+      debugPrint('===== JASTIP PAY ERROR =====');
+      debugPrint('Error type: ${e.runtimeType}');
+      debugPrint('Error message: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal memproses pembayaran: ${e.toString()}'),
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 10),
           ),
         );
       }

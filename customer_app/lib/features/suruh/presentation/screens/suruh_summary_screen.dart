@@ -15,6 +15,8 @@ import '../../../order/domain/models/order_model.dart';
 import '../../../order/presentation/providers/order_provider.dart';
 import '../../../wallet/data/repositories/wallet_repository.dart';
 import '../../../wallet/presentation/providers/wallet_provider.dart';
+import '../../../notification/presentation/providers/notification_provider.dart';
+import '../../../notification/domain/services/push_notification_sender.dart';
 
 class SuruhSummaryScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> data;
@@ -548,6 +550,27 @@ class _SuruhSummaryScreenState extends ConsumerState<SuruhSummaryScreen> {
       );
 
       ref.read(walletBalanceProvider.notifier).refresh();
+
+      // Create notification & send push
+      if (mounted) {
+        final userId = ref.read(authStateProvider).user?.id ?? '';
+        ref.read(notificationsProvider.notifier).createNotification(
+          userId: userId,
+          title: 'Pesanan Suruh Kurir Dibuat 📦',
+          body: 'Pesanan Suruh Kurir Anda telah berhasil dibuat. Kurir akan segera menuju lokasi.',
+          category: 'Pesanan',
+          routeName: '/tracking',
+        );
+
+        final sender = ref.read(pushNotificationSenderProvider);
+        await sender.sendToUser(
+          userId: userId,
+          title: 'Pesanan Suruh Kurir Dibuat 📦',
+          body: 'Pesanan Suruh Kurir Anda telah berhasil dibuat. Kurir akan segera menuju lokasi.',
+          category: 'Pesanan',
+          route: '/tracking',
+        );
+      }
 
       if (mounted) {
         context.go('/jastip/success', extra: newOrder);

@@ -15,37 +15,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
-  
+
   bool _isLoading = false;
-  bool _isLogin = true;
   bool _obscurePassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
-  void _submitForm() async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isLoading = true);
     try {
-      if (_isLogin) {
-        await ref.read(authStateProvider.notifier).signInWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      } else {
-        await ref.read(authStateProvider.notifier).signUpWithEmail(
-          _nameController.text.trim(),
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      }
+      await ref.read(authStateProvider.notifier).signInWithEmail(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
 
       if (mounted) {
         final authState = ref.read(authStateProvider);
@@ -107,37 +96,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 8),
                 Text(
-                  _isLogin ? 'Masuk' : 'Daftar',
+                  'Masuk',
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _isLogin ? 'Silakan masuk ke akun Anda.' : 'Buat akun baru untuk melanjutkan.',
+                  'Silakan masuk ke akun Anda.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.5,
                       ),
                 ),
                 const SizedBox(height: 32),
-                
-                if (!_isLogin) ...[
-                  TextFormField(
-                    controller: _nameController,
-                    enabled: !isLoading,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Lengkap',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Nama tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
+
                 TextFormField(
                   controller: _emailController,
                   enabled: !isLoading,
@@ -157,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextFormField(
                   controller: _passwordController,
                   enabled: !isLoading,
@@ -187,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                
+
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -209,28 +180,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : Text(_isLogin ? 'Masuk' : 'Daftar'),
+                        : const Text('Masuk'),
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            setState(() {
-                              _isLogin = !_isLogin;
-                              _formKey.currentState?.reset();
-                            });
-                          },
-                    child: Text(
-                      _isLogin ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Masuk',
-                      style: const TextStyle(color: AppColors.primary),
+                    onPressed: isLoading ? null : () => context.push('/register'),
+                    child: const Text(
+                      'Belum punya akun? Daftar',
+                      style: TextStyle(color: AppColors.primary),
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
                 Row(
                   children: [

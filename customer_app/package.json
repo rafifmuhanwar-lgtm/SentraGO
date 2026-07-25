@@ -1,0 +1,10 @@
+{
+  "name": "send-push-notification",
+  "version": "1.0.0",
+  "description": "Send push notification via FCM V1",
+  "main": "send-push-notification.js",
+  "dependencies": {
+    "node-appwrite": "^14.0.0",
+    "google-auth-library": "^9.0.0"
+  }
+}

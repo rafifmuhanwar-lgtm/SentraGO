@@ -1,39 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../notification/domain/models/notification_model.dart';
+import '../../../notification/domain/services/push_notification_sender.dart';
+import '../../../notification/presentation/providers/notification_provider.dart';
 
-class _NotificationItem {
-  final String id;
-  final String category; // 'Pesanan', 'Promo & Info', 'Sistem & Akun'
-  final String title;
-  final String body;
-  final String time;
-  bool isRead;
-  final IconData icon;
-  final Color color;
-  final String? route;
-
-  _NotificationItem({
-    required this.id,
-    required this.category,
-    required this.title,
-    required this.body,
-    required this.time,
-    required this.isRead,
-    required this.icon,
-    required this.color,
-    this.route,
-  });
-}
-
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   String _selectedCategory = 'Semua';
 
   final List<String> _categories = [
@@ -43,246 +24,51 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     'Sistem & Akun',
   ];
 
-  late List<_NotificationItem> _notifications;
+  void _testPushNotification() async {
+    final userId = ref.read(authStateProvider).user?.id;
+    if (userId == null) return;
 
-  @override
-  void initState() {
-    super.initState();
-    _notifications = [
-      _NotificationItem(
-        id: 'notif-1',
-        category: 'Pesanan',
-        title: 'Kurir Sedang Membeli Barang Anda 🛒',
-        body: 'Mitra Kurir (Budi Santoso) telah tiba di Indomaret Point dan sedang melakukan verifikasi struk belanjaan Anda.',
-        time: '10 mnt lalu',
-        isRead: false,
-        icon: Icons.storefront_rounded,
-        color: AppColors.primary,
-        route: '/tracking',
-      ),
-      _NotificationItem(
-        id: 'notif-2',
-        category: 'Promo & Info',
-        title: 'Gratis Ongkir Hingga Rp 10.000! 🎉',
-        body: 'Gunakan kode voucher TITIPDB untuk menikmati potongan gratis ongkos kirim pada pesanan Jastip Belanja pertama Anda hari ini.',
-        time: '1 jam lalu',
-        isRead: false,
-        icon: Icons.percent_rounded,
-        color: const Color(0xFFE65100),
-      ),
-      _NotificationItem(
-        id: 'notif-3',
-        category: 'Sistem & Akun',
-        title: 'Top Up SentraPay Berhasil 💳',
-        body: 'Top up saldo sebesar Rp 150.000 melalui Virtual Account BCA telah berhasil ditambahkan ke dompet SentraPay Anda.',
-        time: '3 jam lalu',
-        isRead: true,
-        icon: Icons.account_balance_wallet_rounded,
-        color: const Color(0xFF2E7D32),
-      ),
-      _NotificationItem(
-        id: 'notif-4',
-        category: 'Pesanan',
-        title: 'Pesanan Suruh Kurir Selesai ✅',
-        body: 'Dokumen penting Anda telah berhasil dikirim dan diterima oleh Ibu Rina di SCBD Tower. Terima kasih telah menggunakan SentraGO!',
-        time: 'Kemarin, 16:45',
-        isRead: true,
-        icon: Icons.check_circle_outline_rounded,
-        color: const Color(0xFF2E7D32),
-      ),
-      _NotificationItem(
-        id: 'notif-5',
-        category: 'Promo & Info',
-        title: 'Layanan Darurat Obat 24 Jam Siap! 💊',
-        body: 'Butuh resep atau vitamin malam hari? Kurir SentraGO siap membelikan di Apotek K-24 terdekat kapan pun Anda butuh.',
-        time: '18 Jul, 20:15',
-        isRead: true,
-        icon: Icons.local_pharmacy_rounded,
-        color: const Color(0xFF1565C0),
-      ),
-      _NotificationItem(
-        id: 'notif-6',
-        category: 'Sistem & Akun',
-        title: 'Keamanan Akun Diperbarui 🛡️',
-        body: 'Sistem telah melakukan pengecekan berkala. Akun Anda terlindungi dengan enkripsi SSL/TLS tingkat tinggi.',
-        time: '16 Jul, 11:30',
-        isRead: true,
-        icon: Icons.security_rounded,
-        color: const Color(0xFF1565C0),
-      ),
-    ];
-  }
-
-  void _markAllAsRead() {
-    setState(() {
-      for (var item in _notifications) {
-        item.isRead = true;
-      }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Semua notifikasi telah ditandai sebagai dibaca.'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    // 1. Simpan notifikasi in-app
+    await ref.read(notificationsProvider.notifier).createNotification(
+      userId: userId,
+      title: '🔔 Notifikasi Berhasil!',
+      body: 'Selamat! Notifikasi in-app SentraGO berjalan dengan baik. 🎉',
+      category: 'Sistem & Akun',
+      routeName: '/profile/notifications',
     );
-  }
 
-  void _showNotificationDetail(_NotificationItem item) {
-    setState(() {
-      item.isRead = true;
-    });
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(item.icon, color: item.color, size: 28),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          item.category,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.time,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              item.title,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              item.body,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (item.route != null) ...[
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ctx.pop();
-                    context.push(item.route!);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Lihat Status Pesanan',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: TextButton(
-                onPressed: () => ctx.pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Tutup',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+    // 2. Kirim push notification via Cloud Function
+    final sender = ref.read(pushNotificationSenderProvider);
+    await sender.sendToUser(
+      userId: userId,
+      title: '🔔 Test Push Notification!',
+      body: 'Kalo kamu lihat ini, FCM push notification berhasil! 🎉',
+      category: 'Sistem & Akun',
+      route: '/profile/notifications',
     );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Notifikasi & Push notification terkirim!'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _notifications.where((n) {
+    final allNotifications = ref.watch(notificationsProvider);
+    final unreadCount = ref.watch(unreadCountProvider);
+    final userId = ref.read(authStateProvider).user?.id;
+
+    final filtered = allNotifications.where((n) {
       if (_selectedCategory == 'Semua') return true;
       return n.category == _selectedCategory;
     }).toList();
-
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -295,7 +81,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           if (unreadCount > 0)
             TextButton.icon(
-              onPressed: _markAllAsRead,
+              onPressed: () {
+                ref.read(notificationsProvider.notifier).markAllAsRead();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Semua notifikasi telah ditandai sebagai dibaca.'),
+                    backgroundColor: AppColors.primary,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
+              },
               icon: const Icon(Icons.done_all_rounded, size: 18, color: AppColors.primary),
               label: const Text(
                 'Tandai Dibaca',
@@ -306,7 +102,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
             ),
-          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.send_rounded, size: 20, color: AppColors.primary),
+            tooltip: 'Test Push Notification',
+            onPressed: () => _testPushNotification(),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: SafeArea(
@@ -422,15 +223,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(20),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final item = filtered[index];
-                        return _buildNotificationCard(item);
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        final userId = ref.read(authStateProvider).user?.id;
+                        if (userId != null) {
+                          await ref.read(notificationsProvider.notifier).loadNotifications(userId);
+                        }
                       },
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(20),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = filtered[index];
+                          return _buildNotificationCard(item);
+                        },
+                      ),
                     ),
             ),
           ],
@@ -439,7 +248,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(_NotificationItem item) {
+  Widget _buildNotificationCard(NotificationModel item) {
+    final iconData = _getNotificationIcon(item.category, item.title);
+    final color = _getNotificationColor(item.category);
+
     return Material(
       color: item.isRead ? AppColors.surface : AppColors.primary.withValues(alpha: 0.03),
       borderRadius: BorderRadius.circular(16),
@@ -469,10 +281,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: 0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(item.icon, color: item.color, size: 22),
+                child: Icon(iconData, color: color, size: 22),
               ),
               const SizedBox(width: 14),
 
@@ -515,7 +327,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          item.time,
+                          item.timeAgo,
                           style: TextStyle(
                             fontSize: 10,
                             color: item.isRead ? AppColors.textSecondary : AppColors.primary,
@@ -579,4 +391,193 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
     );
   }
+
+  void _showNotificationDetail(NotificationModel item) {
+    // Mark as read
+    ref.read(notificationsProvider.notifier).markAsRead(item.id);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _getNotificationColor(item.category).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _getNotificationIcon(item.category, item.title),
+                    color: _getNotificationColor(item.category),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          item.category,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.timeAgo,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              item.title,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              item.body,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (item.routeName != null) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ctx.pop();
+                    context.push(item.routeName!);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Lihat Detail',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: TextButton(
+                onPressed: () => ctx.pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Tutup',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getNotificationIcon(String category, String title) {
+    switch (category) {
+      case 'Pesanan':
+        if (title.toLowerCase().contains('selesai')) return Icons.check_circle_rounded;
+        if (title.toLowerCase().contains('kurir') || title.toLowerCase().contains('diantar')) {
+          return Icons.delivery_dining_rounded;
+        }
+        if (title.toLowerCase().contains('beli') || title.toLowerCase().contains('toko')) {
+          return Icons.storefront_rounded;
+        }
+        return Icons.receipt_long_rounded;
+      case 'Promo & Info':
+        return Icons.percent_rounded;
+      case 'Sistem & Akun':
+        if (title.toLowerCase().contains('top up') || title.toLowerCase().contains('saldo')) {
+          return Icons.account_balance_wallet_rounded;
+        }
+        if (title.toLowerCase().contains('aman') || title.toLowerCase().contains('keamanan') || title.toLowerCase().contains('login')) {
+          return Icons.security_rounded;
+        }
+        return Icons.info_outline_rounded;
+      default:
+        return Icons.notifications_outlined;
+    }
+  }
+
+  Color _getNotificationColor(String category) {
+    switch (category) {
+      case 'Pesanan':
+        return AppColors.primary;
+      case 'Promo & Info':
+        return const Color(0xFFE65100);
+      case 'Sistem & Akun':
+        return const Color(0xFF2E7D32);
+      default:
+        return AppColors.textSecondary;
+    }
+  }
 }
+

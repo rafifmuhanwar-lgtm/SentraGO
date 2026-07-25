@@ -221,6 +221,7 @@ class OrderModel {
     );
   }
 
+  /// Kirim ke Appwrite — hanya field yang ada di schema `orders` collection.
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
@@ -229,6 +230,7 @@ class OrderModel {
       'item': title,
       'pickupLocation': pickupAddress,
       'dropoffLocation': deliveryAddress,
+      'pickupAddress': pickupAddress,
       'budget': danaBelanja,
       'notes': description,
       'status': status.toString().split('.').last,
@@ -240,12 +242,14 @@ class OrderModel {
       'serviceName': serviceName,
       'ongkir': ongkir,
       'biayaLayanan': biayaLayanan,
-      if (voucherCode != null) 'voucherCode': voucherCode,
-      if (voucherDiscount != null) 'voucherDiscount': voucherDiscount,
       'pickupLat': pickupLat,
       'pickupLng': pickupLng,
       'dropoffLat': dropoffLat,
       'dropoffLng': dropoffLng,
+      'totalBelanjaStruk': totalBelanjaStruk,
+      'strukImageUrl': strukImageUrl,
+      'deliveryProofUrl': deliveryProofUrl,
+      'refundCustomer': refundCustomer,
     };
   }
 }

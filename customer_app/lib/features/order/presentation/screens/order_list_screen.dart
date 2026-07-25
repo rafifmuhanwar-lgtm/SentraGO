@@ -400,36 +400,39 @@ class _OrderCard extends ConsumerWidget {
             Row(
               children: [
                 if (isOngoing) ...[
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Navigate to Chat Room with this courier
-                        final rooms = ref.read(chatRoomsProvider);
-                        try {
-                          final room = rooms.firstWhere((r) => r.id == order.chatRoomId);
-                          context.push('/chat/room', extra: room);
-                        } catch (_) {
-                          // Fallback: Show toast / alert if room not found or open first room
-                          if (rooms.isNotEmpty) {
-                            context.push('/chat/room', extra: rooms.first);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Ruang obrolan kurir sedang dimuat...')),
-                            );
+                  // Chat button — hanya muncul kalau sudah ada kurir
+                  if (order.courierId.isNotEmpty) ...[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // Navigate to Chat Room with this courier
+                          final rooms = ref.read(chatRoomsProvider);
+                          try {
+                            final room = rooms.firstWhere((r) => r.id == order.chatRoomId);
+                            context.push('/chat/room', extra: room);
+                          } catch (_) {
+                            // Fallback: Show toast / alert if room not found
+                            if (rooms.isNotEmpty) {
+                              context.push('/chat/room', extra: rooms.first);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Ruang obrolan kurir sedang dimuat...')),
+                              );
+                            }
                           }
-                        }
-                      },
-                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                      label: const Text('Chat Kurir', style: TextStyle(fontSize: 12)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        },
+                        icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                        label: const Text('Chat Kurir', style: TextStyle(fontSize: 12)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
+                    const SizedBox(width: 10),
+                  ],
                 ] else ...[
                   Expanded(
                     child: OutlinedButton.icon(

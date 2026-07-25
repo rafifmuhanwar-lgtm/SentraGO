@@ -1,4 +1,4 @@
-package com.sentra.customer_app
+package com.sentrago.customer
 
 import io.flutter.embedding.android.FlutterActivity
 

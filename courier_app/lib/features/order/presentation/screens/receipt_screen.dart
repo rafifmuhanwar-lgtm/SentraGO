@@ -6,7 +6,6 @@ import 'package:appwrite/appwrite.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/appwrite_client.dart';
-import '../../data/repositories/order_repository.dart';
 import '../../domain/models/order_model.dart';
 import '../../../../core/services/database_service.dart';
 

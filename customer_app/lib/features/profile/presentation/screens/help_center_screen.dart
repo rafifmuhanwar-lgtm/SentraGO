@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../chat/domain/models/chat_room_model.dart';
 
 class _FaqItem {
   final String id;
@@ -80,7 +81,13 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       category: 'Pembayaran',
       question: 'Apakah SentraGO mendukung metode pembayaran Tunai (COD)?',
       answer:
-          'Ya! Anda dapat memilih metode pembayaran Tunai (COD) untuk membayar ongkos kirim maupun harga barang belanjaan langsung kepada mitra kurir saat barang tiba di lokasi Anda.',
+          'Tidak, saat ini SentraGO tidak mendukung metode pembayaran Tunai (COD). '
+          'Hal ini untuk meminimalisir tindakan order fiktif dan memberikan keamanan '
+          'bagi Mitra Kurir maupun Pelanggan. '
+          'Seluruh transaksi di SentraGO dilakukan secara non-tunai melalui sistem pembayaran digital seperti '
+          'QRIS (Scan & Bayar) dan Saldo SentraPay Wallet. '
+          'Pastikan saldo SentraPay Wallet Anda mencukupi sebelum melakukan pemesanan, '
+          'atau lakukan Top Up terlebih dahulu melalui menu Akun > Pembayaran.',
     ),
     _FaqItem(
       id: 'faq-7',
@@ -288,12 +295,22 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       title: 'Live Chat CS',
                       subtitle: 'Respons < 2 mnt',
                       color: AppColors.primary,
-                      onTap: () => _showContactModal(
-                        'Live Chat CS 24/7',
-                        'Terhubung langsung dengan tim dukungan SentraGO untuk penyelesaian cepat kendala pesanan Anda.',
-                        Icons.support_agent_rounded,
-                        AppColors.primary,
-                      ),
+                      onTap: () {
+                        final csRoom = ChatRoomModel(
+                          id: 'room_cs',
+                          senderName: 'Customer Service SentraGO',
+                          avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+                          lastMessage: 'Halo! Ada yang bisa kami bantu?',
+                          lastMessageTime: DateTime.now(),
+                          unreadCount: 0,
+                          isOnline: true,
+                          lastSeenText: 'Aktif 24 Jam',
+                          serviceType: 'Bantuan & Kendala',
+                          isSupport: true,
+                          orderStatus: 'ongoing',
+                        );
+                        context.push('/chat/room', extra: csRoom);
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),

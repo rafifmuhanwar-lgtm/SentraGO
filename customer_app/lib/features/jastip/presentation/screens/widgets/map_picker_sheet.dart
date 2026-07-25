@@ -431,10 +431,10 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
                             ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}'
                             : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         additionalOptions: AppConfig.mapboxAccessToken.isNotEmpty
-                            ? const {
+                            ? {
                                 'accessToken': AppConfig.mapboxAccessToken,
                               }
-                            : const {},
+                            : {},
                         userAgentPackageName: 'com.sentra.customer_app',
                       ),
                       MarkerLayer(

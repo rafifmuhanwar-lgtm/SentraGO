@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/database_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../order/data/repositories/order_repository.dart';
+import '../../../order/domain/models/order_model.dart';
 import '../../domain/models/chat_room_model.dart';
 import '../../domain/models/chat_message_model.dart';
 import 'package:uuid/uuid.dart';
@@ -20,6 +21,26 @@ class ChatRepository {
   final String? _userName;
 
   ChatRepository(this._dbService, this._orderRepo, this._userId, this._userName);
+
+  /// Cek apakah chat room masih aktif (belum 2 jam setelah selesai)
+  bool _isChatRoomActive(OrderModel order) {
+    // Kalau belum ada kurir, chat room gak usah muncul
+    if (order.courierId.isEmpty) return false;
+
+    // Kalau masih ongoing, aktif
+    if (order.status == OrderStatus.ongoing) return true;
+
+    // Kalau completed, cek waktunya
+    if (order.status == OrderStatus.completed) {
+      final updatedAt = order.updatedAt ?? order.createdAt;
+      final durasi = DateTime.now().difference(updatedAt);
+      // Aktif hanya dalam 2 jam setelah selesai
+      return durasi.inHours < 2;
+    }
+
+    // Cancelled atau lainnya — sembunyikan
+    return false;
+  }
 
   Future<List<ChatRoomModel>> getChatRooms() async {
     if (_userId == null) return [];
@@ -44,10 +65,12 @@ class ChatRepository {
       ),
     );
 
-    // Satu room per order (pakai order.id sebagai orderId/roomId)
+    // Satu room per order — hanya yang chat room-nya masih aktif
     for (var order in orders) {
+      if (!_isChatRoomActive(order)) continue;
+
       String courierAvatar = order.courierAvatar;
-      
+
       // Ambil foto profil terbaru dari database
       if (order.courierId.isNotEmpty) {
         final courierData = await _dbService.getCourierById(order.courierId);

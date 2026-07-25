@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/photo_picker_tile.dart';
-import '../../../../core/config/app_config.dart';
+import '../../../../core/widgets/address_search_field.dart';
 import '../../../profile/domain/models/address_model.dart';
 import '../../domain/models/pickup_location_data.dart';
 import 'widgets/map_picker_sheet.dart';
@@ -36,6 +34,12 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
   }
 
   void _submit() {
+    debugPrint('===== SUBMIT JASTIP =====');
+    debugPrint('item: ${_itemController.text}');
+    debugPrint('pickupLocation: ${_pickupLocation?.address}');
+    debugPrint('dropoffAddress: $_dropoffAddress');
+    debugPrint('budget: ${_budgetController.text}');
+
     if (_itemController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Detail barang harus diisi')),
@@ -217,110 +221,136 @@ class _JastipFormScreenState extends State<JastipFormScreen> {
       ),
       child: Column(
         children: [
-          // Map Preview (static decorative)
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Container(
-              height: 100,
-              width: double.infinity,
-              color: const Color(0xFFE8E0D8),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  FlutterMap(
-                    options: const MapOptions(
-                      initialCenter: LatLng(-6.200000, 106.816666),
-                      initialZoom: 14.0,
+          // Location Search Fields
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Cari Lokasi',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 12),
+
+                // Pickup Location - Search
+                AddressSearchField(
+                  label: 'Lokasi Pembelian',
+                  hint: _pickupLocation?.address ?? 'Cari toko atau alamat...',
+                  prefixIcon: Icons.store_outlined,
+                  proximityLat: -6.2,
+                  proximityLng: 106.8,
+                  onSelected: (result) {
+                    setState(() {
+                      _pickupLocation = PickupLocationData(
+                        address: result.fullAddress,
+                        lat: result.lat,
+                        lng: result.lng,
+                      );
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Or use map picker button
+                if (_pickupLocation == null)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: _pickPickupLocation,
+                      icon: const Icon(Icons.map_outlined, size: 16),
+                      label: const Text('Pilih di Peta', style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(foregroundColor: AppColors.primary),
                     ),
-                    children: [
-                      TileLayer(
-                        urlTemplate: AppConfig.mapboxAccessToken.isNotEmpty
-                            ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}'
-                            : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        additionalOptions: AppConfig.mapboxAccessToken.isNotEmpty
-                            ? const {
-                                'accessToken': AppConfig.mapboxAccessToken,
-                              }
-                            : const {},
-                        userAgentPackageName: 'com.sentra.customer_app',
-                      ),
-                    ],
                   ),
+
+                if (_pickupLocation != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: AppColors.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _pickupLocation!.address,
+                            style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          onPressed: _pickPickupLocation,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          color: AppColors.primary,
                         ),
                       ],
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+                  ),
+
+                const Divider(height: 24, color: AppColors.border),
+
+                // Dropoff Location - Search
+                AddressSearchField(
+                  label: 'Alamat Pengantaran',
+                  hint: _dropoffAddress ?? 'Cari alamat tujuan...',
+                  prefixIcon: Icons.location_on_outlined,
+                  proximityLat: -6.2,
+                  proximityLng: 106.8,
+                  onSelected: (result) {
+                    setState(() {
+                      _dropoffAddress = result.fullAddress;
+                      _dropoffAddressData = AddressModel(
+                        id: '',
+                        label: result.placeName,
+                        recipientName: '',
+                        phone: '',
+                        fullAddress: result.fullAddress,
+                      );
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                if (_dropoffAddress != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
                       children: [
-                        Icon(Icons.map_outlined, size: 16, color: AppColors.primary),
-                        SizedBox(width: 6),
-                        Text('Pilih Rute di Peta', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        const Icon(Icons.check_circle, color: AppColors.success, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _dropoffAddress!,
+                            style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          onPressed: _pickDropoffAddress,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          color: AppColors.success,
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // Location Selectors
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    const SizedBox(height: 14),
-                    Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.primary, width: 4),
-                      ),
-                    ),
-                    Container(
-                      width: 2,
-                      height: 44,
-                      color: AppColors.border,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                    ),
-                    const Icon(Icons.location_on, color: AppColors.error, size: 18),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildLocationTile(
-                        title: 'Lokasi Pembelian',
-                        value: _pickupLocation?.address,
-                        hint: 'Tentukan lokasi toko/warung',
-                        onTap: _pickPickupLocation,
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Divider(height: 1, color: AppColors.border),
-                      ),
-                      _buildLocationTile(
-                        title: 'Alamat Pengantaran',
-                        value: _dropoffAddress,
-                        hint: 'Pilih alamat tujuan',
-                        onTap: _pickDropoffAddress,
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),

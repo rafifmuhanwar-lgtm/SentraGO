@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/services/database_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../order/data/repositories/order_repository.dart';
+import '../../../order/domain/models/order_model.dart';
 import '../../domain/models/chat_room_model.dart';
 import '../../domain/models/chat_message_model.dart';
 
@@ -31,6 +32,23 @@ class ChatRepository {
     this._courierName,
   );
 
+  /// Cek apakah chat room masih aktif (belum 2 jam setelah selesai)
+  bool _isChatRoomActive(OrderModel order) {
+    // Kalau masih ongoing, aktif
+    if (order.status == OrderStatus.ongoing) return true;
+
+    // Kalau completed, cek waktunya
+    if (order.status == OrderStatus.completed) {
+      final updatedAt = order.updatedAt ?? order.createdAt;
+      final durasi = DateTime.now().difference(updatedAt);
+      // Aktif hanya dalam 2 jam setelah selesai
+      return durasi.inHours < 2;
+    }
+
+    // Cancelled atau lainnya — sembunyikan
+    return false;
+  }
+
   /// Ambil semua room chat dari order yang dikerjakan kurir ini
   Future<List<ChatRoomModel>> getChatRooms() async {
     final courierId = _courierId;
@@ -41,6 +59,9 @@ class ChatRepository {
       final List<ChatRoomModel> rooms = [];
 
       for (var order in orders) {
+        // Skip chat room yang udah expired
+        if (!_isChatRoomActive(order)) continue;
+
         // Ambil nama customer dari userId (tampilkan singkat)
         final customerLabel = order.userId.isNotEmpty
             ? 'Customer #${order.userId.substring(0, 6).toUpperCase()}'
