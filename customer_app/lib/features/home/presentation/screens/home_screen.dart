@@ -27,7 +27,9 @@ class HomeScreen extends ConsumerWidget {
             Container(
               decoration: const BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(28),
+                ),
               ),
               child: SafeArea(
                 bottom: false,
@@ -46,7 +48,8 @@ class HomeScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'Hallo, $userName 👋',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -54,9 +57,8 @@ class HomeScreen extends ConsumerWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   'Mau dibantuin apa hari ini?',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.white70,
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.white70),
                                 ),
                                 const SizedBox(height: 10),
                                 _buildCurrentLocationWidget(context, ref),
@@ -80,20 +82,37 @@ class HomeScreen extends ConsumerWidget {
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(28),
                         ),
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: 'Cari atau tulis sendiri...',
                             hintStyle: TextStyle(
-                              color: AppColors.textSecondary.withValues(alpha: 0.6),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.6,
+                              ),
                               fontSize: 14,
                             ),
-                            prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: AppColors.textSecondary,
+                            ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -114,7 +133,7 @@ class HomeScreen extends ConsumerWidget {
                       context,
                       title: 'Titip Belanja',
                       subtitle: 'Jastip apa aja',
-                      icon: Icons.shopping_bag_rounded,
+                      imageAsset: 'assets/images/bag_service.png',
                       onTap: () => context.push('/jastip'),
                     ),
                   ),
@@ -124,7 +143,7 @@ class HomeScreen extends ConsumerWidget {
                       context,
                       title: 'Suruh Kurir',
                       subtitle: 'Suruh tugas apapun',
-                      icon: Icons.motorcycle_rounded,
+                      imageAsset: 'assets/images/courier_service.png',
                       onTap: () {
                         context.push('/suruh');
                       },
@@ -143,7 +162,11 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   _buildQuickAction(context, Icons.history, 'Riwayat'),
                   _buildQuickAction(context, Icons.favorite_border, 'Favorit'),
-                  _buildQuickAction(context, Icons.confirmation_number_outlined, 'Voucher'),
+                  _buildQuickAction(
+                    context,
+                    Icons.confirmation_number_outlined,
+                    'Voucher',
+                  ),
                   _buildQuickAction(
                     context,
                     Icons.help_outline,
@@ -160,75 +183,84 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // ── Promo Banner ──
-            ref.watch(promosProvider).when(
-              data: (promos) {
-                if (promos.isEmpty) return const SizedBox.shrink();
-                final promo = promos.first; // Or use a PageView for multiple promos
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                promo.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                promo.description,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                  fontSize: 12,
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  'KODE: ${promo.code}',
-                                  style: const TextStyle(
-                                    color: AppColors.primaryDark,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+            ref
+                .watch(promosProvider)
+                .when(
+                  data: (promos) {
+                    if (promos.isEmpty) return const SizedBox.shrink();
+                    final promo =
+                        promos.first; // Or use a PageView for multiple promos
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDark,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    promo.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    promo.description,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      fontSize: 12,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'KODE: ${promo.code}',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryDark,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            // Courier illustration in promo
+                            Image.asset(
+                              'assets/images/courier_scooter.png',
+                              height: 80,
+                              fit: BoxFit.contain,
+                            ),
+                          ],
                         ),
-                        // Courier illustration in promo
-                        Image.asset(
-                          'assets/images/courier_scooter.png',
-                          height: 80,
-                          fit: BoxFit.contain,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => const SizedBox.shrink(),
-            ),
+                      ),
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => const SizedBox.shrink(),
+                ),
             const SizedBox(height: 28),
 
             // ── Popular Shops / Merchants Section ──
@@ -248,7 +280,7 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context, {
     required String title,
     required String subtitle,
-    required IconData icon,
+    required String imageAsset,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -270,19 +302,27 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, size: 32, color: AppColors.primary),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  imageAsset,
+                  height: 42,
+                  width: 42,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(height: 14),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
@@ -292,7 +332,12 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickAction(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
+  Widget _buildQuickAction(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -309,7 +354,9 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontSize: 11),
           ),
         ],
       ),
@@ -318,12 +365,14 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildActiveOrderTracker(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(ordersProvider);
-    final activeOrders = orders.where((o) => o.status == OrderStatus.ongoing).toList();
-    
+    final activeOrders = orders
+        .where((o) => o.status == OrderStatus.ongoing)
+        .toList();
+
     if (activeOrders.isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     final activeOrder = activeOrders.first;
 
     return Padding(
@@ -333,7 +382,10 @@ class HomeScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1.2),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.2),
+            width: 1.2,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.05),
@@ -350,7 +402,10 @@ class HomeScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE8F5E9),
                     borderRadius: BorderRadius.circular(20),
@@ -398,8 +453,10 @@ class HomeScreen extends ConsumerWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    activeOrder.serviceName.contains('Suruh') ? Icons.motorcycle_rounded : Icons.delivery_dining_rounded, 
-                    color: AppColors.primary, 
+                    activeOrder.serviceName.contains('Suruh')
+                        ? Icons.motorcycle_rounded
+                        : Icons.delivery_dining_rounded,
+                    color: AppColors.primary,
                     size: 24,
                   ),
                 ),
@@ -423,8 +480,8 @@ class HomeScreen extends ConsumerWidget {
                         activeOrder.statusText.isNotEmpty
                             ? activeOrder.statusText
                             : (activeOrder.courierId.isNotEmpty
-                                ? 'Kurir sedang memproses pesananmu'
-                                : 'Sedang mencari kurir...'),
+                                  ? 'Kurir sedang memproses pesananmu'
+                                  : 'Sedang mencari kurir...'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -459,10 +516,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 child: const Text(
                   'Lacak Kurir Langsung',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -589,7 +643,10 @@ class HomeScreen extends ConsumerWidget {
                   child: Icon(icon, color: AppColors.primary, size: 22),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.background,
                     borderRadius: BorderRadius.circular(12),
@@ -640,7 +697,11 @@ class HomeScreen extends ConsumerWidget {
                     color: AppColors.primary,
                   ),
                 ),
-                Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
+                  color: AppColors.primary,
+                ),
               ],
             ),
           ],
@@ -666,10 +727,7 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 4),
           const Text(
             'Ide tugas cepat harian yang siap dibantu kurir kami',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 14),
           Row(
@@ -816,7 +874,9 @@ class HomeScreen extends ConsumerWidget {
             ),
           );
           if (result != null) {
-            ref.read(currentLocationProvider.notifier).updateLocation(
+            ref
+                .read(currentLocationProvider.notifier)
+                .updateLocation(
                   latitude: result.lat,
                   longitude: result.lng,
                   address: result.address,
