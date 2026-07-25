@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Customer Service - SentraGO</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+
+<script>
+
+if(!localStorage.getItem("adminLogin")){
+    window.location.href="login.html";
+}
+
+</script>
+
+
+
+<body>
+
+
+<!-- Sidebar -->
+
+<div class="sidebar">
+
+<div class="logo">
+SentraGO
+<span>Admin</span>
+</div>
+
+
+<ul>
+
+<a href="dashboard.html">
+<li>🏠 Dashboard</li>
+</a>
+
+
+<a href="user.html">
+<li>👤 User</li>
+</a>
+
+
+<a href="driver.html">
+<li>🚗 Driver</li>
+</a>
+
+
+<a href="order.html">
+<li>📦 Pesanan</li>
+</a>
+
+
+<a href="reports.html">
+<li>📈 Laporan</li>
+</a>
+
+
+<li class="active">
+💬 Customer Service
+</li>
+
+
+<a href="setting/adminProfile.html">
+<li>⚙ Pengaturan</li>
+</a>
+
+
+</ul>
+
+
+</div>
+
+
+
+
+
+<div class="main">
+
+
+<header>
+
+<div>
+
+<h2>
+Customer Service
+</h2>
+
+<p>
+Kelola pesan pengguna SentraGO
+</p>
+
+</div>
+
+
+</header>
+
+
+
+
+
+
+<div class="cs-container">
+
+
+
+<!-- User Chat List -->
+
+<div class="chat-list">
+
+
+<div class="chat-header">
+
+<h3>
+Pesan Masuk
+</h3>
+
+
+<span>
+3 Chat
+</span>
+
+</div>
+
+
+
+
+<div class="chat-user active-chat">
+
+
+<div class="avatar">
+👤
+</div>
+
+
+<div>
+
+<b>
+Fauzan
+</b>
+
+<p>
+Masalah pesanan saya
+</p>
+
+</div>
+
+
+<span class="online">
+●
+</span>
+
+
+</div>
+
+
+
+
+
+<div class="chat-user">
+
+
+<div class="avatar">
+👤
+</div>
+
+
+<div>
+
+<b>
+Andi
+</b>
+
+<p>
+Cara daftar driver?
+</p>
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+<div class="chat-user">
+
+
+<div class="avatar">
+👤
+</div>
+
+
+<div>
+
+<b>
+Budi
+</b>
+
+<p>
+Pembayaran gagal
+</p>
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+<!-- Chat Area -->
+
+
+<div class="chat-box">
+
+
+
+<div class="chat-title">
+
+<h3>
+Fauzan
+</h3>
+
+<span>
+Online
+</span>
+
+
+</div>
+
+
+
+
+
+
+<div class="messages">
+
+
+<div class="message user">
+
+Halo admin, pesanan saya belum sampai
+
+</div>
+
+
+
+<div class="message admin">
+
+Halo Fauzan 👋
+Kami sedang mengecek pesanan Anda.
+
+</div>
+
+
+
+<div class="message user">
+
+Nomor order saya ORD001
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="auto-reply">
+
+
+<h4>
+🤖 Auto Reply
+</h4>
+
+
+<div class="reply-item">
+Halo, terima kasih sudah menghubungi SentraGO.
+</div>
+
+
+<div class="reply-item">
+Pesanan sedang kami proses.
+</div>
+
+
+<div class="reply-item">
+Silakan kirim nomor pesanan Anda.
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div class="chat-input">
+
+
+<input 
+type="text"
+placeholder="Ketik pesan...">
+
+
+<button>
+
+<i class="fa-solid fa-paper-plane"></i>
+
+</button>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+</div>
+
+
+</body>
+
+</html>

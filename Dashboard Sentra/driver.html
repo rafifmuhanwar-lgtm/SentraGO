@@ -1,192 +1,424 @@
-<html>
-    <head>
-        <link rel="stylesheet" href="style.css">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-       <div class="sidebar">
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Driver Management - SentraGO</title>
+
+    <link rel="stylesheet" href="style.css">
+
+
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+
+    <script>
+
+        if(!localStorage.getItem("adminLogin")){
+
+            window.location.href="login.html";
+
+        }
+
+    </script>
+
+</head>
+
+
+<body>
+
+
+<div class="sidebar">
+
 
     <div class="logo">
+
         SentraGO
-        <span>Admin</span>
+
+        <span>
+            Admin
+        </span>
+
     </div>
+
+
+
 
     <ul>
 
-        <a href="dashboard.html" style="text-decoration: none; color:white;"><li>🏠 Dashboard</li></a>
-        <a href="user.html" style="text-decoration: none; color:white;"><li>👤 User</li></a>
-        <a style="text-decoration: none; color:white;"><li class="active">🚗 Driver</li></a>
-        <a href="order.html" style="text-decoration: none; color:white;"><li>📦 Pesanan</li></a>
-        <a href="reports.html" style="text-decoration: none; color:white"><li>📈 Laporan</li></a>
-        <a href="setting/adminProfile.html" style="text-decoration: none; color: white;"><li>⚙ Pengaturan</li></a>
+
+        <a href="dashboard.html" style="text-decoration:none;color:white;">
+            <li>🏠 Dashboard</li>
+        </a>
+
+
+        <a href="user.html" style="text-decoration:none;color:white;">
+            <li>👤 User</li>
+        </a>
+
+
+
+        <a style="text-decoration:none;color:white;">
+            <li class="active">🚗 Driver</li>
+        </a>
+
+
+
+
+        <a href="order.html" style="text-decoration:none;color:white;">
+            <li>📦 Pesanan</li>
+        </a>
+
+
+
+        <a href="reports.html" style="text-decoration:none;color:white;">
+            <li>📈 Laporan</li>
+        </a>
+
+
+        <a href="cs.html" style="text-decoration:none;color:white;">
+            <li>💬 Customer Service</li>
+        </a>
+
+        <a href="setting/adminProfile.html" style="text-decoration:none;color:white;">
+            <li>⚙ Pengaturan</li>
+        </a>
+
+
 
     </ul>
 
+
 </div>
 
-    <div class="main">
 
-    <header>
-        <h2>Driver Management</h2>
 
-        <button class="add-driver-btn">
-            + Tambah Driver
-        </button>
-    </header>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
 
-        <input
-            type="text"
-            placeholder="Cari Driver..."
-        >
+
+<div class="main">
+
+
+
+<header>
+
+
+    <div>
+
+        <h2>
+            Driver Management
+        </h2>
+
+
+        <p>
+            Monitoring seluruh data driver SentraGO.
+        </p>
+
+
+    </div>
+
+
+
+</header>
+
+
+
+
+
+
+<!-- Cards -->
+
+
+<div class="cards">
+
+
+
+    <div class="card">
+
+        <h3>
+            Total Driver
+        </h3>
+
+        <h1 id="totalDriver">
+            0
+        </h1>
+
+    </div>
+
+
+
+
+    <div class="card">
+
+        <h3>
+            Online
+        </h3>
+
+        <h1 id="driverOnline">
+            0
+        </h1>
+
+    </div>
+
+
+
+
+
+    <div class="card">
+
+        <h3>
+            Sedang Bertugas
+        </h3>
+
+        <h1 id="driverBusy">
+            0
+        </h1>
+
+    </div>
+
+
+
+
+
+    <div class="card">
+
+        <h3>
+            Offline
+        </h3>
+
+
+        <h1 id="driverOffline">
+            0
+        </h1>
+
+
+    </div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Toolbar -->
+
+
+<div class="toolbar">
+
+
+
+    <div class="search-user">
+
+
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+
+
+
+        <input 
+        type="text"
+        placeholder="Cari nama driver atau ID Driver...">
+
+
+    </div>
+
+
+
+
+
+    <div class="toolbar-right">
+
+
 
         <select>
-            <option value="all">Semua Status</option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-            <option value="busy">Sedang Bertugas</option>
+
+
+            <option>
+                Semua Status
+            </option>
+
+
+            <option>
+                Online
+            </option>
+
+
+            <option>
+                Sedang Bertugas
+            </option>
+
+
+            <option>
+                Offline
+            </option>
+
+
         </select>
 
-    </div>
 
-    <!-- Driver Table -->
-    <div class="table">
-
-        <table>
-
-            <thead>
-
-                <tr>
-                    <th>ID</th>
-                    <th>Driver</th>
-                    <th>Kendaraan</th>
-                    <th>Plat Nomor</th>
-                    <th>Rating</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                <tr>
-
-                    <td>D001</td>
-
-                    <td>Agus Setiawan</td>
-
-                    <td>Honda Beat</td>
-
-                    <td>B 1234 XYZ</td>
-
-                    <td>⭐ 4.9</td>
-
-                    <td>
-                        <span class="status-online">
-                            Online
-                        </span>
-                    </td>
-
-                    <td class="action">
-
-                        <button class="btn-detail">
-                            Detail
-                        </button>
-
-                        <button class="btn-edit">
-                            Edit
-                        </button>
-
-                        <button class="btn-delete">
-                            Hapus
-                        </button>
-
-                    </td>
-
-                </tr>
-
-                <tr>
-
-                    <td>D002</td>
-
-                    <td>Budi Santoso</td>
-
-                    <td>Yamaha NMAX</td>
-
-                    <td>B 8765 ABC</td>
-
-                    <td>⭐ 4.8</td>
-
-                    <td>
-                        <span class="status-busy">
-                            Bertugas
-                        </span>
-                    </td>
-
-                    <td class="action">
-
-                        <button class="btn-detail">
-                            Detail
-                        </button>
-
-                        <button class="btn-edit">
-                            Edit
-                        </button>
-
-                        <button class="btn-delete">
-                            Hapus
-                        </button>
-
-                    </td>
-
-                </tr>
-
-                <tr>
-
-                    <td>D003</td>
-
-                    <td>Rudi Hartono</td>
-
-                    <td>Honda Vario</td>
-
-                    <td>B 5678 DEF</td>
-
-                    <td>⭐ 4.7</td>
-
-                    <td>
-                        <span class="status-offline">
-                            Offline
-                        </span>
-                    </td>
-
-                    <td class="action">
-
-                        <button class="btn-detail">
-                            Detail
-                        </button>
-
-                        <button class="btn-edit">
-                            Edit
-                        </button>
-
-                        <button class="btn-delete">
-                            Hapus
-                        </button>
-
-                    </td>
-
-                </tr>
-
-            </tbody>
-
-        </table>
 
     </div>
+
+
 
 </div>
 
-    </body>
+
+
+
+
+
+
+
+
+<!-- Table -->
+
+
+<div class="table">
+
+
+
+<div class="table-header">
+
+
+    <h3>
+        Daftar Driver
+    </h3>
+
+
+
+    <span id="driverCount">
+        0 Data
+    </span>
+
+
+
+</div>
+
+
+
+
+
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+<th>ID</th>
+
+<th>Driver</th>
+
+<th>Kendaraan</th>
+
+<th>Plat Nomor</th>
+
+<th>Rating</th>
+
+<th>Status</th>
+
+<th>Aksi</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+
+
+
+<tbody>
+
+
+<tr>
+
+
+<td colspan="7" style="text-align:center;">
+
+    Belum ada data driver
+
+</td>
+
+
+</tr>
+
+
+
+</tbody>
+
+
+
+</table>
+
+
+
+
+
+
+
+
+<div class="pagination">
+
+
+<button>
+←
+</button>
+
+
+<button class="active-page">
+1
+</button>
+
+
+<button>
+2
+</button>
+
+
+<button>
+3
+</button>
+
+
+<button>
+→
+</button>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+</div>
+
+
+
+
+
+<script src="js/driver.js"></script>
+
+
+</body>
+
 </html>

@@ -1,114 +1,267 @@
-<html>
-    <head>
-<<<<<<< HEAD
-        <link rel="stylesheet" href="../style.css">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-=======
-        <link rel="stylesheet" href="/Dashboard Sentra/style.css">
->>>>>>> c07bbd727f2e79166e2f31afd8d2ccee5faabf51
-    </head>
-    <body>
-        <div class="sidebar">
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Notification Settings - SentraGO</title>
+
+    <link rel="stylesheet" href="../style.css">
+
+</head>
+
+
+<script>
+
+if(!localStorage.getItem("adminLogin")){
+    window.location.href="../login.html";
+}
+
+</script>
+
+
+<body>
+
+
+<!-- Sidebar -->
+
+<div class="sidebar">
+
 
     <div class="logo">
         SentraGO
         <span>Admin</span>
     </div>
 
+
     <ul>
 
-        <a href="/Dashboard Sentra/dashboard.html" style="text-decoration: none; color: white;"><li>🏠 Dashboard</li></a>
-        <a href="/Dashboard Sentra/user.html" style="text-decoration: none; color:white;"><li>👤 User</li></a>
-        <a href="/Dashboard Sentra/driver.html" style="text-decoration: none; color:white;"><li>🚗 Driver</li></a>
-        <a href="/Dashboard Sentra/order.html" style="text-decoration: none; color:white;"><li>📦 Pesanan</li></a>
-        <a href="/Dashboard Sentra/reports.html" style="text-decoration: none; color:white"><li>📈 Laporan</li></a>
-        <a style="text-decoration: none; color: white;"><li class="active">⚙ Pengaturan</li></a>
+
+        <a href="../dashboard.html" style="text-decoration:none;color:white;">
+            <li>🏠 Dashboard</li>
+        </a>
+
+
+        <a href="../user.html" style="text-decoration:none;color:white;">
+            <li>👤 User</li>
+        </a>
+
+
+        <a href="../driver.html" style="text-decoration:none;color:white;">
+            <li>🚗 Driver</li>
+        </a>
+
+
+        <a href="../order.html" style="text-decoration:none;color:white;">
+            <li>📦 Pesanan</li>
+        </a>
+
+
+        <a href="../reports.html" style="text-decoration:none;color:white;">
+            <li>📈 Laporan</li>
+        </a>
+
+
+        <li class="active">
+            ⚙ Pengaturan
+        </li>
+
 
     </ul>
 
+
 </div>
+
+
+
+
+
+<!-- Main -->
+
 <div class="main">
 
-    <header>
 
-        <h2>Settings</h2>
+<header>
 
-        <button class="btn-save">
-            Simpan Perubahan
-        </button>
 
-    </header>
+    <div>
 
-    <div class="settings-container">
+        <h2>
+            Settings
+        </h2>
 
-        <!-- Sidebar -->
 
-        <div class="settings-menu">
+        <p>
+            Kelola pengaturan notifikasi sistem SentraGO.
+        </p>
 
-            <a href="adminProfile.html" style="text-decoration: none; color: white;"><button class="setting-item">
-                Profil Admin
-            </button></a>
 
-            <a href="application.html" style="text-decoration: none; color: white;"><button class="setting-item">
-                Aplikasi
-            </button></a>
+    </div>
 
-            <a href="security.html" style="text-decoration: none; color:white;"><button class="setting-item">
-                Keamanan
-            </button></a>
 
-            <a href="notification.html" style="text-decoration: none; color:white"><button class="setting-item active">
-                Notifikasi
-            </button></a>
 
-            <a href="backupDb.html" style="text-decoration: none; color:white;"><button class="setting-item">
-                Backup Database
-            </button></a>
+    <button class="btn-save">
+        Simpan Perubahan
+    </button>
 
-            <a href="about.html" style="text-decoration: none; color:white"><button class="setting-item">
-                Tentang
-            </button></a>
 
-        </div>
+</header>
 
-        <!-- Content -->
+
+
+
+
+
+<div class="settings-container">
+
+
+
+<!-- Settings Menu -->
+
+<div class="settings-menu">
+
+
+    <a href="adminProfile.html" class="setting-item">
+        Profil Admin
+    </a>
+
+
+    <a href="security.html" class="setting-item">
+        Keamanan
+    </a>
+
+
+    <a href="access.html" class="setting-item">
+        Manajemen Akses
+    </a>
+
+
+    <a href="notification.html" class="setting-item active">
+        Notifikasi
+    </a>
+
+
+    <a href="database.html" class="setting-item">
+        Database
+    </a>
+
+
+    <a href="about.html" class="setting-item">
+        Tentang
+    </a>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Content -->
+
 
 <div class="settings-content">
 
-    <h2>Notifikasi</h2>
 
-    <div class="switch-group">
+<h2>
+Pengaturan Notifikasi
+</h2>
 
-        <label>Email Notifikasi</label>
 
-        <input type="checkbox" checked>
 
-    </div>
 
-    <div class="switch-group">
 
-        <label>Notifikasi Driver Baru</label>
+<div class="switch-group">
 
-        <input type="checkbox" checked>
+<label>
+Email Notifikasi
+</label>
 
-    </div>
-
-    <div class="switch-group">
-
-        <label>Notifikasi Pesanan Baru</label>
-
-        <input type="checkbox" checked>
-
-    </div>
-
-    <div class="switch-group">
-
-        <label>Notifikasi Backup</label>
-
-        <input type="checkbox">
-
-    </div>
+<input type="checkbox" checked>
 
 </div>
-    </body>
+
+
+
+
+
+
+<div class="switch-group">
+
+<label>
+Notifikasi Driver Baru
+</label>
+
+<input type="checkbox" checked>
+
+</div>
+
+
+
+
+
+
+<div class="switch-group">
+
+<label>
+Notifikasi Pesanan Baru
+</label>
+
+<input type="checkbox" checked>
+
+</div>
+
+
+
+
+
+
+<div class="switch-group">
+
+<label>
+Notifikasi Status Pesanan
+</label>
+
+<input type="checkbox" checked>
+
+</div>
+
+
+
+
+
+
+<div class="switch-group">
+
+<label>
+Notifikasi Backup Database
+</label>
+
+<input type="checkbox">
+
+</div>
+
+
+
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+</body>
+
 </html>

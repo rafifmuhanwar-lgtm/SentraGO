@@ -1,15 +1,32 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>SentraGO Admin</title>
 
     <link rel="stylesheet" href="style.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+
+        if(!localStorage.getItem("adminLogin")){
+
+            window.location.href="login.html";
+
+        }
+
+    </script>
+
 </head>
+
+
 <body>
+
 
 <div class="sidebar">
 
@@ -18,142 +35,206 @@
         <span>Admin</span>
     </div>
 
+
     <ul>
 
         <li class="active">🏠 Dashboard</li>
-        <a href="user.html" style="text-decoration: none; color:white;"><li>👤 User</li></a>
-        <a href="driver.html" style="text-decoration: none; color:white;"><li>🚗 Driver</li></a>
-        <a href="order.html" style="text-decoration: none; color:white;"><li>📦 Pesanan</li></a>
-        <a href="reports.html" style="text-decoration: none; color:white"><li>📈 Laporan</li></a>
-        <a href="setting/adminProfile.html" style="text-decoration: none; color: white;"><li>⚙ Pengaturan</li></a>
+
+        <a href="user.html" style="text-decoration:none;color:white;">
+            <li>👤 User</li>
+        </a>
+
+        <a href="driver.html" style="text-decoration:none;color:white;">
+            <li>🚗 Driver</li>
+        </a>
+
+        <a href="order.html" style="text-decoration:none;color:white;">
+            <li>📦 Pesanan</li>
+        </a>
+
+        <a href="reports.html" style="text-decoration:none;color:white">
+            <li>📈 Laporan</li>
+        </a>
+
+        <a href="cs.html" style="text-decoration:none;color:white;">
+            <li>💬 Customer Service</li>
+        </a>
+
+        <a href="setting/adminProfile.html" style="text-decoration:none;color:white;">
+            <li>⚙ Pengaturan</li>
+        </a>
 
     </ul>
 
 </div>
 
+
+
+
 <div class="main">
 
-    <header>
-        <h2>Dashboard</h2>
 
-        <div class="admin">
-            Admin
-        </div>
-    </header>
+<header>
 
-    <!-- Statistic Cards -->
-    <div class="cards">
+    <h2>Dashboard</h2>
 
-        <div class="card">
-            <h3>Total User</h3>
-            <h1>1.245</h1>
-        </div>
 
-        <div class="card">
-            <h3>Driver</h3>
-            <h1>327</h1>
-        </div>
+    <div class="admin">
 
-        <div class="card">
-            <h3>Pesanan</h3>
-            <h1>532</h1>
-        </div>
-
-        <div class="card">
-            <h3>Pendapatan</h3>
-            <h1>Rp15,2 JT</h1>
-        </div>
+        Admin
 
     </div>
 
-    <!-- Chart -->
-    <div class="chart">
-        <canvas id="myChart"></canvas>
-    </div>
 
-    <!-- Recent Orders -->
-    <div class="table">
+</header>
 
-        <table>
 
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>User</th>
-                    <th>Driver</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
 
-            <tbody>
 
-                <tr>
-                    <td>#1234</td>
-                    <td>Fauzan</td>
-                    <td>Budi</td>
-                    <td>
-                        <span class="done">
-                            Selesai
-                        </span>
-                    </td>
-                </tr>
 
-                <tr>
-                    <td>#1235</td>
-                    <td>Andi</td>
-                    <td>Joko</td>
-                    <td>
-                        <span class="process">
-                            Diproses
-                        </span>
-                    </td>
-                </tr>
+<!-- Statistic Cards -->
 
-            </tbody>
+<div class="cards">
 
-        </table>
+
+    <div class="card">
+
+        <h3>Total User</h3>
+
+        <h1 id="totalUser">
+            0
+        </h1>
 
     </div>
+
+
+
+
+    <div class="card">
+
+        <h3>Driver</h3>
+
+        <h1 id="totalDriver">
+            0
+        </h1>
+
+    </div>
+
+
+
+
+    <div class="card">
+
+        <h3>Pesanan</h3>
+
+        <h1 id="totalOrder">
+            0
+        </h1>
+
+    </div>
+
+
+
+
+    <div class="card">
+
+        <h3>Pendapatan</h3>
+
+        <h1 id="totalIncome">
+            Rp0
+        </h1>
+
+    </div>
+
+
 
 </div>
 
-<script>
-    const ctx = document.getElementById("myChart");
 
-    new Chart(ctx, {
-        type: "line",
 
-        data: {
-            labels: [
-                "Sen",
-                "Sel",
-                "Rab",
-                "Kam",
-                "Jum",
-                "Sab",
-                "Min"
-            ],
 
-            datasets: [
-                {
-                    label: "Order",
 
-                    data: [
-                        12,
-                        19,
-                        8,
-                        25,
-                        18,
-                        30,
-                        28
-                    ],
 
-                    fill: true
-                }
-            ]
-        }
-    });
-</script>
+
+<!-- Chart -->
+
+<div class="chart">
+
+    <canvas id="myChart"></canvas>
+
+</div>
+
+
+
+
+
+
+
+<!-- Recent Orders -->
+
+<div class="table">
+
+
+<table>
+
+
+<thead>
+
+<tr>
+
+    <th>ID</th>
+
+    <th>User</th>
+
+    <th>Driver</th>
+
+    <th>Status</th>
+
+</tr>
+
+
+</thead>
+
+
+
+
+<tbody>
+
+
+<tr>
+
+
+<td colspan="4" style="text-align:center;">
+
+    Belum ada data pesanan
+
+</td>
+
+
+</tr>
+
+
+</tbody>
+
+
+
+</table>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+<script src="js/dashboard.js"></script>
+
 
 </body>
+
 </html>
