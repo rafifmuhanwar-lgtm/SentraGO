@@ -1,156 +1,157 @@
 # SentraGO
 
-SentraGO is a comprehensive on-demand delivery and logistics platform consisting of three main components: a **Customer Application** for placing orders, a **Courier Application** for drivers to manage deliveries, and an **Admin Dashboard** for system management.
+SentraGO adalah platform pengiriman dan logistik *on-demand* komprehensif yang terdiri dari tiga komponen utama: **Aplikasi Pelanggan (Customer App)** untuk membuat pesanan, **Aplikasi Kurir (Courier App)** untuk pengemudi mengelola pengiriman, dan **Admin Dashboard** untuk manajemen sistem.
 
-This project is built using Flutter for the mobile applications and HTML/CSS for the dashboard, utilizing [Appwrite](https://appwrite.io/) as the Backend-as-a-Service (BaaS) and Mapbox for mapping capabilities.
-
----
-
-## 📱 Project Structure
-
-The repository is divided into the following main directories:
-
-- `/customer_app`: Flutter application for customers to create orders, track deliveries, chat with couriers, and manage payments.
-- `/courier_app`: Flutter application for couriers/drivers to accept orders, update delivery statuses, and manage their earnings/withdrawals.
-- `/Dashboard Sentra`: HTML/CSS/JS based admin dashboard for monitoring users, couriers, and transactions.
+Proyek ini dibangun menggunakan Flutter untuk aplikasi seluler dan HTML/CSS untuk dashboard, serta menggunakan [Appwrite](https://appwrite.io/) sebagai *Backend-as-a-Service* (BaaS) dan Mapbox untuk kapabilitas pemetaan.
 
 ---
 
-## 🛠️ Technology Stack
+## 📱 Struktur Proyek
 
-### Mobile Applications (Customer & Courier Apps)
+Repositori ini dibagi menjadi direktori utama berikut:
+
+- `/customer_app`: Aplikasi Flutter untuk pelanggan membuat pesanan, melacak pengiriman, melakukan obrolan (chat) dengan kurir, dan mengelola pembayaran.
+- `/courier_app`: Aplikasi Flutter untuk kurir/pengemudi menerima pesanan, memperbarui status pengiriman, dan mengelola pendapatan/penarikan saldo.
+- `/Dashboard Sentra`: Admin dashboard berbasis HTML/CSS/JS untuk memantau pengguna, kurir, dan seluruh transaksi.
+
+---
+
+## 🔄 Alur Aplikasi (Flow)
+
+### 1. Alur Aplikasi Pelanggan (Customer App)
+1. **Registrasi/Login:** Pelanggan masuk ke aplikasi menggunakan autentikasi Appwrite.
+2. **Pembuatan Pesanan:** Pelanggan memasukkan lokasi penjemputan (pickup) dan lokasi pengiriman (drop-off) melalui peta interaktif, lalu memilih jenis paket.
+3. **Pembayaran:** Pelanggan melakukan pembayaran biaya pengiriman melalui *gateway* pembayaran Pakasir.
+4. **Pencarian Kurir:** Sistem mencari kurir terdekat yang tersedia.
+5. **Pemantauan & Chat:** Setelah kurir didapatkan, pelanggan dapat memantau lokasi kurir secara *real-time* dan berkomunikasi melalui fitur *chat* bawaan.
+6. **Penyelesaian Pesanan:** Saat pesanan tiba, pelanggan akan melihat status pesanan berubah menjadi selesai dan dapat melihat riwayat pesanan.
+
+### 2. Alur Aplikasi Kurir (Courier App)
+1. **Login Kurir:** Kurir yang sudah terdaftar dan disetujui masuk ke aplikasi.
+2. **Status Online:** Kurir mengaktifkan status agar bisa menerima pesanan masuk.
+3. **Menerima Pesanan:** Saat ada pesanan di sekitar, kurir mendapat notifikasi dan dapat "Menerima" pesanan tersebut.
+4. **Proses Pengiriman:** Kurir mengikuti navigasi peta menuju lokasi *pickup*, mengambil paket, dan memperbarui status pesanan menjadi "Dalam Perjalanan" (*In Transit*).
+5. **Komunikasi:** Kurir dapat melakukan *chat* dengan pelanggan jika membutuhkan panduan jalan atau informasi paket.
+6. **Penyelesaian & Pendapatan:** Setelah paket diserahkan, kurir mengubah status menjadi "Terkirim" (*Delivered*). Biaya pengiriman masuk ke saldo akun kurir, yang nantinya bisa ditarik (*withdraw*).
+
+### 3. Alur Admin Dashboard
+1. **Pemantauan Global:** Admin masuk ke dashboard web untuk melihat ringkasan pesanan aktif dan memantau keseluruhan sistem.
+2. **Manajemen Pengguna & Kurir:** Admin memverifikasi kurir baru yang mendaftar atau mengelola data pengguna.
+3. **Pelacakan Transaksi:** Admin memantau seluruh alur pembayaran, penyelesaian pesanan, dan laporan operasional harian.
+
+---
+
+## 🛠️ Teknologi yang Digunakan
+
+### Aplikasi Mobile (Customer & Courier)
 - **Framework:** Flutter (Dart)
-- **State Management:** Riverpod (`flutter_riverpod`, `riverpod_annotation`)
+- **Manajemen State:** Riverpod (`flutter_riverpod`, `riverpod_annotation`)
 - **Routing:** GoRouter (`go_router`)
-- **Backend Services:** Appwrite SDK (`appwrite`)
+- **Layanan Backend:** Appwrite SDK (`appwrite`)
 - **Networking:** Dio (`dio`)
-- **Maps & Location:** Flutter Map (`flutter_map`), Geolocator (`geolocator`), Mapbox
-- **Payment Gateway (Customer):** Pakasir
-- **Local Storage:** Flutter Secure Storage (`flutter_secure_storage`)
+- **Peta & Lokasi:** Flutter Map (`flutter_map`), Geolocator (`geolocator`), Mapbox
+- **Gateway Pembayaran (Customer):** Pakasir
+- **Penyimpanan Lokal:** Flutter Secure Storage (`flutter_secure_storage`)
 - **UI & Styling:** Google Fonts, Cupertino Icons, Cached Network Image
 
 ### Admin Dashboard
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript murni.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Cara Menjalankan Proyek
 
-Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
+Ikuti instruksi berikut untuk menjalankan proyek di perangkat lokal Anda.
 
-### Prerequisites
+### Prasyarat
 
-1. **Flutter SDK:** Ensure you have Flutter installed (SDK `^3.9.2` or compatible). [Install Flutter](https://docs.flutter.dev/get-started/install)
-2. **Dart SDK:** Included with Flutter.
-3. **IDE:** VS Code, Android Studio, or IntelliJ IDEA with Flutter plugins installed.
-4. **Appwrite Account:** An active project in Appwrite Cloud (or self-hosted) with Database, Auth, and Storage configured.
-5. **Mapbox Account:** An access token from Mapbox for rendering maps.
+1. **Flutter SDK:** Pastikan Anda telah menginstal Flutter (SDK `^3.9.2` atau yang kompatibel). [Install Flutter](https://docs.flutter.dev/get-started/install)
+2. **Dart SDK:** Sudah termasuk di dalam Flutter.
+3. **IDE:** VS Code, Android Studio, atau IntelliJ IDEA.
+4. **Akun Appwrite:** Proyek aktif di Appwrite Cloud (atau *self-hosted*) dengan Database, Auth, dan Storage yang sudah dikonfigurasi.
+5. **Akun Mapbox:** Access Token dari Mapbox untuk merender peta.
 
 ---
 
-### Configuration (Environment Variables)
+### Konfigurasi (Environment Variables)
 
-Before running the apps, you need to configure the Appwrite endpoint and Mapbox token. 
+Sebelum menjalankan aplikasi, Anda perlu mengatur *endpoint* Appwrite dan token Mapbox.
 
-#### 1. Mapbox Configuration
-The applications use Mapbox via `--dart-define`. You will need your Mapbox Access Token (found in `config.json` or your Mapbox Dashboard).
+#### 1. Konfigurasi Mapbox
+Aplikasi membaca Mapbox melalui argumen `--dart-define`. Anda memerlukan Mapbox Access Token (bisa diambil dari file `config.json` di proyek ini).
 
-#### 2. Appwrite Configuration
-Ensure the Appwrite Project ID, Database ID, and Storage Bucket ID are correctly set in both applications:
+#### 2. Konfigurasi Appwrite
+Pastikan Appwrite Project ID, Database ID, dan Storage Bucket ID sudah disesuaikan pada file konfigurasi masing-masing aplikasi:
 - **Customer App:** `customer_app/lib/core/config/app_config.dart`
 - **Courier App:** `courier_app/lib/core/config/app_config.dart`
 
 ---
 
-### Running the Customer App
+### Menjalankan Customer App
 
-1. Navigate to the `customer_app` directory:
+1. Masuk ke direktori `customer_app`:
    ```bash
    cd customer_app
    ```
-2. Get the Flutter dependencies:
+2. Unduh *dependencies* Flutter:
    ```bash
    flutter pub get
    ```
-3. Run the code generator for Riverpod and other annotations (if needed):
+3. Jalankan *code generator* untuk Riverpod dan *annotations* lainnya (jika diperlukan):
    ```bash
    dart run build_runner build -d
    ```
-4. Run the application (replace `YOUR_MAPBOX_TOKEN` with the actual token):
+4. Jalankan aplikasi (ganti `YOUR_MAPBOX_TOKEN` dengan token asli Anda):
    ```bash
    flutter run --dart-define=MAPBOX_ACCESS_TOKEN=YOUR_MAPBOX_TOKEN
    ```
 
 ---
 
-### Running the Courier App
+### Menjalankan Courier App
 
-1. Navigate to the `courier_app` directory:
+1. Masuk ke direktori `courier_app`:
    ```bash
    cd courier_app
    ```
-2. Get the Flutter dependencies:
+2. Unduh *dependencies* Flutter:
    ```bash
    flutter pub get
    ```
-3. Run the code generator:
+3. Jalankan *code generator*:
    ```bash
    dart run build_runner build -d
    ```
-4. Run the application:
+4. Jalankan aplikasi:
    ```bash
    flutter run --dart-define=MAPBOX_ACCESS_TOKEN=YOUR_MAPBOX_TOKEN
    ```
 
 ---
 
-### Running the Admin Dashboard
+### Menjalankan Admin Dashboard
 
-The dashboard consists of static HTML files. No build process is required.
-1. Navigate to the `Dashboard Sentra` directory.
-2. Open `dashboard.html` in any modern web browser to view the interface.
-   *(Tip: Use VS Code's "Live Server" extension for a better development experience).*
-
----
-
-## 📦 Core Features
-
-### Customer App
-- **Authentication:** Login/Register via Appwrite Auth.
-- **Order Creation:** Input pickup and delivery locations, select package types.
-- **Real-time Map:** Interactive map for selecting locations (powered by Mapbox).
-- **Payment Integration:** Process payments securely via Pakasir Gateway.
-- **Chat:** Real-time chat with the assigned courier.
-- **Order History:** View active and past orders.
-
-### Courier App
-- **Authentication:** Secure login for approved couriers.
-- **Order Management:** View available orders, accept deliveries, and update statuses (Pickup, In Transit, Delivered).
-- **Navigation:** View pickup and drop-off coordinates.
-- **Chat:** Communicate directly with the customer.
-- **Earnings & Withdrawal:** Track delivery earnings and request withdrawals.
-
-### Admin Dashboard
-- **User & Courier Management:** Monitor active users and driver partners.
-- **Order Tracking:** Oversee all system transactions.
-- **Reports:** Generate analytics and business reports.
+Dashboard hanya menggunakan file HTML statis. Tidak memerlukan proses *build*.
+1. Masuk ke direktori `Dashboard Sentra`.
+2. Buka file `dashboard.html` di browser web modern apa saja.
+   *(Tips: Gunakan ekstensi "Live Server" di VS Code untuk pengalaman pengembangan yang lebih baik).*
 
 ---
 
-## 🔒 Appwrite Backend Setup (Reference)
+## 🔒 Referensi Setup Backend (Appwrite)
 
-To deploy this project to your own Appwrite instance, you will need to create:
-1. **Database** with the following collections:
+Untuk men-*deploy* proyek ini ke instans Appwrite Anda sendiri, Anda perlu membuat:
+1. **Database** dengan *collection* berikut:
    - `users`
    - `couriers`
    - `orders`
    - `chats`
    - `withdrawals`
-2. **Storage Bucket** for user avatars, package photos, etc.
-3. Configure **OAuth providers** (if using social login) and update the Redirect URLs in `app_config.dart`.
+2. **Storage Bucket** untuk menyimpan avatar pengguna, foto paket, dan media lainnya.
+3. Mengonfigurasi **OAuth providers** (jika menggunakan *social login*) dan memperbarui Redirect URLs pada `app_config.dart`.
 
 ---
 
-## 📝 License
+## 📝 Lisensi
 
-This project is proprietary and confidential. Unauthorized copying of files within this repository is strictly prohibited.
+Proyek ini bersifat tertutup (*proprietary*) dan rahasia. Dilarang keras menyalin file-file dalam repositori ini tanpa izin.
