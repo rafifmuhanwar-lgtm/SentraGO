@@ -328,6 +328,5 @@ Proyek ini bersifat proprietary. Hak cipta dilindungi undang-undang.
 
 ## 👥 Tim
 
-**Nama Tim:** *[isi nama tim]*
-**Asal Kampus/Sekolah:** *[isi asal]*
+**Nama Tim:** *kreawords*
 **GitHub:** [github.com/rafifmuhanwar-lgtm/SentraGO](https://github.com/rafifmuhanwar-lgtm/SentraGO)
