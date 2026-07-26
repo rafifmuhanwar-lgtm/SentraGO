@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../chat/domain/models/chat_room_model.dart';
 
 class _FaqItem {
@@ -17,14 +19,14 @@ class _FaqItem {
   });
 }
 
-class HelpCenterScreen extends StatefulWidget {
+class HelpCenterScreen extends ConsumerStatefulWidget {
   const HelpCenterScreen({super.key});
 
   @override
-  State<HelpCenterScreen> createState() => _HelpCenterScreenState();
+  ConsumerState<HelpCenterScreen> createState() => _HelpCenterScreenState();
 }
 
-class _HelpCenterScreenState extends State<HelpCenterScreen> {
+class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
@@ -296,8 +298,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       subtitle: 'Respons < 2 mnt',
                       color: AppColors.primary,
                       onTap: () {
+                        final userId = ref.read(authStateProvider).user?.id ?? '';
                         final csRoom = ChatRoomModel(
-                          id: 'room_cs',
+                          id: 'cs_chat_$userId',
                           senderName: 'Customer Service SentraGO',
                           avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
                           lastMessage: 'Halo! Ada yang bisa kami bantu?',

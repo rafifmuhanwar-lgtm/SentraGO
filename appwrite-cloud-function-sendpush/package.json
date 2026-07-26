@@ -1,0 +1,10 @@
+{
+  "name": "send-push-notification",
+  "version": "1.0.0",
+  "description": "Appwrite Cloud Function untuk kirim push notification via Firebase",
+  "main": "send-push-notification.js",
+  "dependencies": {
+    "node-appwrite": "^14.1.0",
+    "firebase-admin": "^12.7.0"
+  }
+}

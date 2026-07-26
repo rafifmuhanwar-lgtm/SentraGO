@@ -69,9 +69,10 @@ class DatabaseService {
             Permission.read(Role.user(userId)),
             Permission.update(Role.user(userId)),
             Permission.delete(Role.user(userId)),
+            Permission.read(Role.any()),
           ]
-        : <String>[];
-
+        : [Permission.read(Role.any()), Permission.update(Role.any())];
+ 
     await _databases.createDocument(
       databaseId: AppConfig.appwriteDatabaseId,
       collectionId: AppConfig.ordersCollection,

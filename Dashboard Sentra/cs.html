@@ -1,359 +1,232 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Customer Service - SentraGO</title>
-
 <link rel="stylesheet" href="style.css">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
-</head>
-
-
-<script>
-
-if(!localStorage.getItem("adminLogin")){
-    window.location.href="login.html";
-}
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<script type="module" src="js/appwrite-config.js"></script>
+<script type="module">
+    import { checkAuth } from './js/auth.js';
+    await checkAuth();
 </script>
-
-
-
+</head>
 <body>
 
-
-<!-- Sidebar -->
-
 <div class="sidebar">
-
-<div class="logo">
-SentraGO
-<span>Admin</span>
+  <div class="logo">SentraGO <span>Admin</span></div>
+  <ul>
+    <a href="dashboard.html" style="text-decoration:none;color:white;"><li>🏠 Dashboard</li></a>
+    <a href="user.html" style="text-decoration:none;color:white;"><li>👤 User</li></a>
+    <a href="driver.html" style="text-decoration:none;color:white;"><li>🚗 Driver</li></a>
+    <a href="order.html" style="text-decoration:none;color:white;"><li>📦 Pesanan</li></a>
+    <a href="reports.html" style="text-decoration:none;color:white;"><li>📈 Laporan</li></a>
+    <a href="withdrawal.html" style="text-decoration:none;color:white;"><li>💰 Withdrawal</li></a>
+    <a style="text-decoration:none;color:white;"><li class="active">💬 Customer Service</li></a>
+    <a href="setting/adminProfile.html" style="text-decoration:none;color:white;"><li>⚙ Pengaturan</li></a>
+  </ul>
 </div>
-
-
-<ul>
-
-<a href="dashboard.html">
-<li>🏠 Dashboard</li>
-</a>
-
-
-<a href="user.html">
-<li>👤 User</li>
-</a>
-
-
-<a href="driver.html">
-<li>🚗 Driver</li>
-</a>
-
-
-<a href="order.html">
-<li>📦 Pesanan</li>
-</a>
-
-
-<a href="reports.html">
-<li>📈 Laporan</li>
-</a>
-
-
-<li class="active">
-💬 Customer Service
-</li>
-
-
-<a href="setting/adminProfile.html">
-<li>⚙ Pengaturan</li>
-</a>
-
-
-</ul>
-
-
-</div>
-
-
-
-
 
 <div class="main">
+  <header>
+    <div>
+      <h2>Customer Service</h2>
+      <p>Monitoring chat pelanggan &amp; kurir — Realtime dari Appwrite</p>
+    </div>
+    <div class="admin" style="cursor:pointer;">Admin</div>
+  </header>
 
+  <div class="cs-container">
+    <div class="chat-list">
+      <div class="chat-header">
+        <h3>Pesan Masuk</h3>
+        <span id="roomCount">Memuat...</span>
+      </div>
+      <div id="roomItems"></div>
+    </div>
 
-<header>
-
-<div>
-
-<h2>
-Customer Service
-</h2>
-
-<p>
-Kelola pesan pengguna SentraGO
-</p>
-
+    <div class="chat-box">
+      <div class="chat-title">
+        <h3 id="chatWith">Pilih chat untuk mulai</h3>
+        <span id="roomStatus"></span>
+      </div>
+      <div class="messages" id="messagesContainer">
+        <div style="text-align:center;padding:40px;color:#999;">Memuat data...</div>
+      </div>
+      <div class="auto-reply" id="autoReplyBox" style="display:none;">
+        <h4>🤖 Auto Reply</h4>
+        <div class="reply-item" onclick="insertReply('Halo, terima kasih sudah menghubungi SentraGO. Ada yang bisa kami bantu?')">Halo, terima kasih sudah menghubungi SentraGO.</div>
+        <div class="reply-item" onclick="insertReply('Pesanan sedang kami proses, mohon tunggu ya.')">Pesanan sedang kami proses.</div>
+        <div class="reply-item" onclick="insertReply('Silakan kirim nomor pesanan Anda.')">Silakan kirim nomor pesanan Anda.</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Ketik pesan..." disabled>
+        <button id="sendBtn" disabled><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
 </div>
 
-
-</header>
-
-
-
-
-
-
-<div class="cs-container">
-
-
-
-<!-- User Chat List -->
-
-<div class="chat-list">
-
-
-<div class="chat-header">
-
-<h3>
-Pesan Masuk
-</h3>
-
-
-<span>
-3 Chat
-</span>
-
-</div>
-
-
-
-
-<div class="chat-user active-chat">
-
-
-<div class="avatar">
-👤
-</div>
-
-
-<div>
-
-<b>
-Fauzan
-</b>
-
-<p>
-Masalah pesanan saya
-</p>
-
-</div>
-
-
-<span class="online">
-●
-</span>
-
-
-</div>
-
-
-
-
-
-<div class="chat-user">
-
-
-<div class="avatar">
-👤
-</div>
-
-
-<div>
-
-<b>
-Andi
-</b>
-
-<p>
-Cara daftar driver?
-</p>
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-<div class="chat-user">
-
-
-<div class="avatar">
-👤
-</div>
-
-
-<div>
-
-<b>
-Budi
-</b>
-
-<p>
-Pembayaran gagal
-</p>
-
-</div>
-
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-
-<!-- Chat Area -->
-
-
-<div class="chat-box">
-
-
-
-<div class="chat-title">
-
-<h3>
-Fauzan
-</h3>
-
-<span>
-Online
-</span>
-
-
-</div>
-
-
-
-
-
-
-<div class="messages">
-
-
-<div class="message user">
-
-Halo admin, pesanan saya belum sampai
-
-</div>
-
-
-
-<div class="message admin">
-
-Halo Fauzan 👋
-Kami sedang mengecek pesanan Anda.
-
-</div>
-
-
-
-<div class="message user">
-
-Nomor order saya ORD001
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-<div class="auto-reply">
-
-
-<h4>
-🤖 Auto Reply
-</h4>
-
-
-<div class="reply-item">
-Halo, terima kasih sudah menghubungi SentraGO.
-</div>
-
-
-<div class="reply-item">
-Pesanan sedang kami proses.
-</div>
-
-
-<div class="reply-item">
-Silakan kirim nomor pesanan Anda.
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div class="chat-input">
-
-
-<input 
-type="text"
-placeholder="Ketik pesan...">
-
-
-<button>
-
-<i class="fa-solid fa-paper-plane"></i>
-
-</button>
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-</div>
-
-
-</div>
-
+<script type="module">
+    import { databases, Query, DATABASE_ID, ID } from './js/appwrite-config.js';
+
+    console.log('CS Dashboard: script started');
+
+    let currentRoomId = null;
+    let rooms = [];
+
+    async function getUserName(uid) {
+        if (!uid) return '-';
+        try {
+            const doc = await databases.getDocument(DATABASE_ID, 'users', uid);
+            return doc.name || doc.email || uid;
+        } catch { return uid; }
+    }
+
+    async function loadRooms() {
+        console.log('loadRooms: started');
+        try {
+            const roomMap = {};
+
+            // 1. Ambil dari orders
+            console.log('loadRooms: fetching orders...');
+            const res = await databases.listDocuments(DATABASE_ID, 'orders', [
+                Query.limit(100),
+                Query.orderDesc('$createdAt'),
+            ]);
+            console.log('loadRooms: orders fetched, count:', res.documents?.length);
+            for (const o of res.documents) {
+                if (!o.userId) continue;
+                const name = await getUserName(o.userId);
+                roomMap[o.$id] = {
+                    id: o.$id, customerName: name,
+                    orderTitle: o.title || o.item || 'Pesanan',
+                    status: o.status, courierName: o.courierName || 'Kurir', type: 'order',
+                };
+            }
+
+            // 2. Ambil dari chats — room CS
+            try {
+                console.log('loadRooms: fetching chats...');
+                const chatSnap = await databases.listDocuments(DATABASE_ID, 'chats', [
+                    Query.limit(100),
+                    Query.orderDesc('$id'),
+                ]);
+                console.log('loadRooms: chats fetched, count:', chatSnap.documents?.length);
+                const seen = new Set();
+                for (const c of chatSnap.documents) {
+                    const oid = c.orderId || '';
+                    if ((oid.startsWith('cs_chat_') || oid === 'room_cs') && !seen.has(oid)) {
+                        seen.add(oid);
+                        const uid = c.senderId || '';
+                        const name = uid ? await getUserName(uid) : 'Customer';
+                        roomMap[oid] = {
+                            id: oid, customerName: name,
+                            orderTitle: '💬 Live CS', status: 'ongoing',
+                            courierName: c.senderName || 'Kurir', type: 'cs',
+                        };
+                    }
+                }
+                console.log('loadRooms: CS rooms found:', seen.size);
+            } catch (e) { console.warn('CS rooms error:', e); }
+
+            rooms = Object.values(roomMap);
+            console.log('loadRooms: total rooms:', rooms.length);
+            renderRooms();
+            if (rooms.length > 0 && !currentRoomId) selectRoom(rooms[0].id);
+        } catch (e) {
+            console.error('loadRooms error:', e);
+            document.getElementById('roomCount').textContent = 'Error';
+            document.getElementById('messagesContainer').innerHTML =
+                '<div style="text-align:center;padding:40px;color:#e74c3c;">❌ Gagal load: ' + e.message + '</div>';
+        }
+    }
+
+    function renderRooms() {
+        const el = document.getElementById('roomItems');
+        document.getElementById('roomCount').textContent = rooms.length + ' Chat';
+        if (!rooms.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#999;">Belum ada chat</div>'; return; }
+        el.innerHTML = rooms.map(r => `
+            <div class="chat-user ${currentRoomId === r.id ? 'active-chat' : ''}" onclick="window.selectRoom('${r.id}')">
+                <div class="avatar">👤</div>
+                <div><b>${r.customerName}</b><p>${r.orderTitle}</p></div>
+                <span style="font-size:10px;color:${r.status==='ongoing'?'green':'#999'};">${r.status==='ongoing'?'●':'○'}</span>
+            </div>
+        `).join('');
+    }
+
+    window.selectRoom = async function(roomId) {
+        currentRoomId = roomId;
+        const room = rooms.find(r => r.id === roomId);
+        if (!room) return;
+        document.getElementById('chatWith').textContent = room.customerName;
+        document.getElementById('roomStatus').textContent = room.status === 'ongoing' ? '● Aktif' : 'Selesai';
+        document.getElementById('roomStatus').style.color = room.status === 'ongoing' ? 'green' : '#999';
+        document.getElementById('messageInput').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('autoReplyBox').style.display = 'block';
+        renderRooms();
+        await loadMessages(roomId);
+    };
+
+    async function loadMessages(roomId) {
+        try {
+            const res = await databases.listDocuments(DATABASE_ID, 'chats', [
+                Query.equal('orderId', roomId),
+                Query.orderAsc('timestamp'),
+                Query.limit(200),
+            ]);
+            const msgs = res.documents;
+            const container = document.getElementById('messagesContainer');
+            if (!msgs.length) { container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">Belum ada pesan</div>'; return; }
+            const room = rooms.find(r => r.id === roomId);
+            container.innerHTML = msgs.map(m => {
+                const role = m.senderRole || '';
+                const isAdmin = role === 'admin';
+                let label = 'Customer';
+                if (isAdmin) label = 'Admin';
+                else if (role === 'courier') label = room?.courierName || 'Kurir';
+                const time = m.timestamp ? new Date(m.timestamp).toLocaleString('id-ID', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+                return `<div class="message ${isAdmin?'admin':'user'}">
+                    <small style="display:block;margin-bottom:4px;opacity:0.7;">${label}</small>
+                    ${m.mediaUrl ? `<img src="${m.mediaUrl}" style="max-width:200px;border-radius:8px;">` : ''}
+                    ${m.message || ''}
+                    <small style="display:block;margin-top:4px;opacity:0.5;font-size:10px;">${time}</small>
+                </div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        } catch (e) {
+            document.getElementById('messagesContainer').innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;">❌ Gagal load pesan: ' + e.message + '</div>';
+        }
+    }
+
+    window.insertReply = function(text) {
+        document.getElementById('messageInput').value = text;
+        document.getElementById('messageInput').focus();
+    };
+
+    async function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        if (!text || !currentRoomId) return;
+        input.value = '';
+        try {
+            await databases.createDocument(DATABASE_ID, 'chats', ID.unique(), {
+                orderId: currentRoomId, senderId: 'admin', senderName: 'Admin CS',
+                senderRole: 'admin', message: text, messageType: 'text',
+                timestamp: new Date().toISOString(),
+            });
+            await loadMessages(currentRoomId);
+        } catch (e) { alert('Gagal: ' + e.message); }
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('messageInput').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+
+    await loadRooms();
+    setInterval(loadRooms, 3000);
+</script>
 
 </body>
-
 </html>

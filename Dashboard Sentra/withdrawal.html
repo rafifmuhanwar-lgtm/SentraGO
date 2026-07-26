@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawal Management - SentraGO</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<script type="module" src="js/appwrite-config.js"></script>
+<script type="module">
+    import { checkAuth, logout } from './js/auth.js';
+    const user = await checkAuth();
+    document.querySelector('.admin')?.addEventListener('click', () => {
+        if (confirm('Yakin ingin logout?')) logout();
+    });
+</script>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo">SentraGO <span>Admin</span></div>
+    <ul>
+        <a href="dashboard.html" style="text-decoration:none;color:white;"><li>🏠 Dashboard</li></a>
+        <a href="user.html" style="text-decoration:none;color:white;"><li>👤 User</li></a>
+        <a href="driver.html" style="text-decoration:none;color:white;"><li>🚗 Driver</li></a>
+        <a href="order.html" style="text-decoration:none;color:white;"><li>📦 Pesanan</li></a>
+        <a href="reports.html" style="text-decoration:none;color:white;"><li>📈 Laporan</li></a>
+        <a href="withdrawal.html" style="text-decoration:none;color:white;"><li class="active">💰 Withdrawal</li></a>
+        <a href="cs.html" style="text-decoration:none;color:white;"><li>💬 Customer Service</li></a>
+        <a href="setting/adminProfile.html" style="text-decoration:none;color:white;"><li>⚙ Pengaturan</li></a>
+    </ul>
+</div>
+
+<div class="main">
+    <header>
+        <div>
+            <h2>Withdrawal Management</h2>
+            <p>Monitoring penarikan saldo driver SentraGO</p>
+        </div>
+        <div class="admin">Admin</div>
+    </header>
+
+    <div class="cards">
+        <div class="card"><h3>Total Withdrawal</h3><h1 id="totalWithdrawal">0</h1></div>
+        <div class="card"><h3>Menunggu</h3><h1 id="pendingWithdrawal">0</h1></div>
+        <div class="card"><h3>Disetujui</h3><h1 id="approvedWithdrawal">0</h1></div>
+        <div class="card"><h3>Ditolak</h3><h1 id="rejectedWithdrawal">0</h1></div>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-user">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Cari driver atau bank...">
+        </div>
+        <div class="toolbar-right">
+            <select id="statusFilter">
+                <option value="">Semua Status</option>
+                <option value="pending">Menunggu</option>
+                <option value="approved">Disetujui</option>
+                <option value="rejected">Ditolak</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table">
+        <div class="table-header">
+            <h3>Daftar Withdrawal</h3>
+            <span id="withdrawalCount">0 Data</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Driver</th>
+                    <th>Bank</th>
+                    <th>No. Rekening</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="withdrawalTableBody">
+                <tr><td colspan="7" style="text-align:center;padding:40px 0;color:#888;">Memuat data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+    import { databases, Query, DATABASE_ID } from './js/appwrite-config.js';
+    import { checkAuth, formatRupiah, formatDate } from './js/auth.js';
+
+    const courierCache = {};
+
+    async function getCourierName(courierId) {
+        if (!courierId) return '-';
+        if (courierCache[courierId]) return courierCache[courierId];
+        try {
+            const doc = await databases.getDocument(DATABASE_ID, 'couriers', courierId);
+            const name = doc.name || doc.email || courierId;
+            courierCache[courierId] = name;
+            return name;
+        } catch { return courierId; }
+    }
+
+    async function loadWithdrawals() {
+        const filter = document.getElementById('statusFilter').value;
+        const search = document.getElementById('searchInput').value.toLowerCase();
+
+        try {
+            const queries = [Query.orderDesc('$createdAt'), Query.limit(100)];
+            const res = await databases.listDocuments(DATABASE_ID, 'withdrawals', queries);
+            let withdrawals = res.documents || [];
+
+            let total = withdrawals.length;
+            let pending = withdrawals.filter(w => w.status === 'pending').length;
+            let approved = withdrawals.filter(w => w.status === 'approved').length;
+            let rejected = withdrawals.filter(w => w.status === 'rejected').length;
+
+            document.getElementById('totalWithdrawal').textContent = total;
+            document.getElementById('pendingWithdrawal').textContent = pending;
+            document.getElementById('approvedWithdrawal').textContent = approved;
+            document.getElementById('rejectedWithdrawal').textContent = rejected;
+
+            if (filter) withdrawals = withdrawals.filter(w => w.status === filter);
+            if (search) withdrawals = withdrawals.filter(w => {
+                const bank = (w.bankName || '').toLowerCase();
+                const acc = (w.accountNumber || '').toLowerCase();
+                return bank.includes(search) || acc.includes(search) || (w.courierId || '').toLowerCase().includes(search);
+            });
+
+            document.getElementById('withdrawalCount').textContent = withdrawals.length + ' Data';
+            const tbody = document.getElementById('withdrawalTableBody');
+
+            if (!withdrawals.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#888;">Belum ada data withdrawal</td></tr>';
+                return;
+            }
+
+            const rows = await Promise.all(withdrawals.map(async (w) => {
+                const driverName = await getCourierName(w.courierId);
+                const statusLabel = w.status === 'approved' ? 'Disetujui' : w.status === 'rejected' ? 'Ditolak' : 'Menunggu';
+                const statusClass = w.status === 'approved' ? 'status-done' : w.status === 'rejected' ? 'status-cancel' : 'status-process';
+                return `<tr>
+                    <td>${driverName}</td>
+                    <td>${w.bankName || '-'}</td>
+                    <td style="font-family:monospace;">${w.accountNumber || '-'}</td>
+                    <td>${formatRupiah(w.amount || 0)}</td>
+                    <td><span class="${statusClass}" style="padding:4px 12px;border-radius:12px;font-size:12px;">${statusLabel}</span></td>
+                    <td style="font-size:13px;">${formatDate(w.$createdAt)}</td>
+                    <td class="action">
+                        ${w.status === 'pending'
+                            ? `<button class="btn-approve" data-id="${w.$id}" style="background:#27ae60;color:white;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;margin-right:4px;">Setuju</button>
+                               <button class="btn-reject" data-id="${w.$id}" style="background:#e74c3c;color:white;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;">Tolak</button>`
+                            : '<span style="color:#999;">Selesai</span>'
+                        }
+                    </td>
+                </tr>`;
+            }));
+
+            tbody.innerHTML = rows.join('');
+
+            // Event listeners untuk approve/reject
+            document.querySelectorAll('.btn-approve').forEach(btn => {
+                btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'approved'));
+            });
+            document.querySelectorAll('.btn-reject').forEach(btn => {
+                btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'rejected'));
+            });
+
+        } catch (e) {
+            document.getElementById('withdrawalTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;padding:40px;color:#e74c3c;">Gagal memuat data: ' + e.message + '</td></tr>';
+        }
+    }
+
+    async function updateStatus(id, status) {
+        try {
+            await databases.updateDocument(DATABASE_ID, 'withdrawals', id, { status: status });
+            await loadWithdrawals();
+        } catch (e) {
+            alert('Gagal update: ' + e.message);
+        }
+    }
+
+    document.getElementById('statusFilter').addEventListener('change', loadWithdrawals);
+    document.getElementById('searchInput').addEventListener('input', () => {
+        clearTimeout(window._searchTimer);
+        window._searchTimer = setTimeout(loadWithdrawals, 400);
+    });
+
+    await loadWithdrawals();
+</script>
+
+</body>
+</html>

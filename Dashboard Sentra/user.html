@@ -1,9 +1,24 @@
-<html>
-    <head>
-        <link rel="stylesheet" href="style.css">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <body>
-            <div class="sidebar">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - SentraGO</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <script type="module" src="js/appwrite-config.js"></script>
+    <script type="module">
+        import { checkAuth, logout } from './js/auth.js';
+        const user = await checkAuth();
+        document.querySelector('.admin')?.addEventListener('click', () => {
+            if (confirm('Yakin ingin logout?')) logout();
+        });
+    </script>
+</head>
+<body>
+
+<div class="sidebar">
 
     <div class="logo">
         SentraGO
@@ -11,17 +26,18 @@
     </div>
 
     <ul>
-
         <a href="dashboard.html" style="text-decoration: none; color:white;"><li>🏠 Dashboard</li></a>
         <a style="text-decoration: none; color:white;"><li class="active">👤 User</li></a>
         <a href="driver.html" style="text-decoration: none; color:white;"><li>🚗 Driver</li></a>
         <a href="order.html" style="text-decoration: none; color:white;"><li>📦 Pesanan</li></a>
         <a href="reports.html" style="text-decoration: none; color:white"><li>📈 Laporan</li></a>
+        <a href="withdrawal.html" style="text-decoration: none; color:white;"><li>💰 Withdrawal</li></a>
+        <a href="cs.html" style="text-decoration: none; color: white;"><li>💬 Customer Service</li></a>
         <a href="setting/adminProfile.html" style="text-decoration: none; color: white;"><li>⚙ Pengaturan</li></a>
-
     </ul>
 
 </div>
+
 <div class="main">
 
     <header>
@@ -31,9 +47,11 @@
             <p>Kelola seluruh akun pengguna SentraGO.</p>
         </div>
 
-        <button class="add-user-btn">
-            + Tambah User
-        </button>
+        <button class="add-user-btn">+ Tambah User</button>
+
+        <div class="admin" style="cursor:pointer;">
+            Admin
+        </div>
 
     </header>
 
@@ -43,22 +61,22 @@
 
         <div class="card">
             <h3>Total User</h3>
-            <h1>1.245</h1>
+            <h1 id="totalUser">0</h1>
         </div>
 
         <div class="card">
             <h3>Admin</h3>
-            <h1>5</h1>
+            <h1 id="totalAdmin">0</h1>
         </div>
 
         <div class="card">
             <h3>User Aktif</h3>
-            <h1>1.180</h1>
+            <h1 id="activeUser">0</h1>
         </div>
 
         <div class="card">
             <h3>User Baru</h3>
-            <h1>60</h1>
+            <h1 id="newUser">0</h1>
         </div>
 
     </div>
@@ -67,10 +85,7 @@
 
     <div class="toolbar">
 
-        <input
-            type="text"
-            placeholder="Cari nama atau email..."
-        >
+        <input type="text" placeholder="Cari nama atau email...">
 
         <div class="toolbar-right">
 
@@ -98,7 +113,7 @@
 
             <h3>Daftar Pengguna</h3>
 
-            <span>1.245 Data</span>
+            <span id="userCount">0 Data</span>
 
         </div>
 
@@ -107,7 +122,6 @@
             <thead>
 
                 <tr>
-
                     <th>ID</th>
                     <th>Pengguna</th>
                     <th>Email</th>
@@ -115,7 +129,6 @@
                     <th>Status</th>
                     <th>Terdaftar</th>
                     <th>Aksi</th>
-
                 </tr>
 
             </thead>
@@ -123,64 +136,7 @@
             <tbody>
 
                 <tr>
-
-                    <td>#USR001</td>
-
-                    <td>
-
-                        <div class="user-info">
-
-                            <img
-                                src="img/avatar-placeholder.svg"
-                                alt="Avatar"
-                            >
-
-                            <div>
-
-                                <strong>Fauzan Najib</strong>
-
-                                <small>
-                                    @fauzan
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    </td>
-
-                    <td>fauzan@mail.com</td>
-
-                    <td>
-                        <span class="role-user">
-                            User
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="status-active">
-                            Aktif
-                        </span>
-                    </td>
-
-                    <td>20 Juli 2026</td>
-
-                    <td class="action">
-
-                        <button class="btn-detail">
-                            Detail
-                        </button>
-
-                        <button class="btn-edit">
-                            Edit
-                        </button>
-
-                        <button class="btn-delete">
-                            Hapus
-                        </button>
-
-                    </td>
-
+                    <td colspan="7" style="text-align:center;">Belum ada data pengguna</td>
                 </tr>
 
             </tbody>
@@ -188,32 +144,18 @@
         </table>
 
         <div class="pagination">
-
-            <button>
-                ←
-            </button>
-
-            <button class="active-page">
-                1
-            </button>
-
-            <button>
-                2
-            </button>
-
-            <button>
-                3
-            </button>
-
-            <button>
-                →
-            </button>
-
+            <button>←</button>
+            <button class="active-page">1</button>
+            <button>2</button>
+            <button>3</button>
+            <button>→</button>
         </div>
 
     </div>
 
 </div>
-        </body>
-    </head>
+
+<script type="module" src="js/user.js"></script>
+
+</body>
 </html>

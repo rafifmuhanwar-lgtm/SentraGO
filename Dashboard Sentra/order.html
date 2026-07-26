@@ -16,15 +16,13 @@
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-
-<script>
-
-if(!localStorage.getItem("adminLogin")){
-
-    window.location.href="login.html";
-
-}
-
+<script type="module" src="js/appwrite-config.js"></script>
+<script type="module">
+    import { checkAuth, logout } from './js/auth.js';
+    const user = await checkAuth();
+    document.querySelector('.admin')?.addEventListener('click', () => {
+        if (confirm('Yakin ingin logout?')) logout();
+    });
 </script>
 
 
@@ -84,6 +82,10 @@ Admin
 <li>📈 Laporan</li>
 </a>
 
+<a href="withdrawal.html" style="text-decoration:none;color:white;">
+<li>💰 Withdrawal</li>
+</a>
+
 <a href="cs.html" style="text-decoration:none;color:white;">
     <li>💬 Customer Service</li>
 </a>
@@ -98,6 +100,7 @@ Admin
 
 
 </div>
+
 
 
 
@@ -130,9 +133,15 @@ Monitoring seluruh aktivitas pesanan SentraGO.
 
 </div>
 
-
+<div class="admin">
+    Admin
+</div>
 
 </header>
+
+
+
+
 
 
 
@@ -167,6 +176,9 @@ Total Pesanan
 
 
 
+
+
+
 <div class="card">
 
 
@@ -187,6 +199,9 @@ Diproses
 
 
 
+
+
+
 <div class="card">
 
 
@@ -201,6 +216,8 @@ Sedang Diantar
 
 
 </div>
+
+
 
 
 
@@ -234,6 +251,10 @@ Selesai
 
 
 
+
+
+
+
 <!-- Toolbar -->
 
 
@@ -248,7 +269,7 @@ Selesai
 
 
 
-<input 
+<input
 type="text"
 placeholder="Cari ID Pesanan, Pelanggan, atau Driver...">
 
@@ -260,37 +281,16 @@ placeholder="Cari ID Pesanan, Pelanggan, atau Driver...">
 
 
 
+
 <div class="toolbar-right">
 
 
 <select>
-
-
-<option>
-Semua Status
-</option>
-
-
-<option>
-Diproses
-</option>
-
-
-<option>
-Sedang Diantar
-</option>
-
-
-<option>
-Selesai
-</option>
-
-
-<option>
-Dibatalkan
-</option>
-
-
+<option value="">Semua Status</option>
+<option value="process">Diproses</option>
+<option value="delivery">Sedang Diantar</option>
+<option value="done">Selesai</option>
+<option value="cancelled">Dibatalkan</option>
 </select>
 
 
@@ -298,6 +298,8 @@ Dibatalkan
 
 
 </div>
+
+
 
 
 
@@ -330,6 +332,10 @@ Daftar Pesanan
 
 
 </div>
+
+
+
+
 
 
 
@@ -372,6 +378,10 @@ Daftar Pesanan
 
 
 
+
+
+
+
 <tbody>
 
 
@@ -396,9 +406,8 @@ Belum ada data pesanan
 
 
 
+
 </table>
-
-
 
 
 
@@ -452,9 +461,7 @@ Belum ada data pesanan
 
 
 
-
-
-<script src="js/order.js"></script>
+<script type="module" src="js/order.js"></script>
 
 
 

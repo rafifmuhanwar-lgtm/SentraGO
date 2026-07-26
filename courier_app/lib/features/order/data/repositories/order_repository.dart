@@ -15,10 +15,13 @@ class OrderRepository {
 
   Future<List<OrderModel>> getAvailableOrders() async {
     try {
+      // Ambil semua orders tanpa filter (biar gak perlu index)
+      // Filter dilakukan manual di Dart untuk keamanan index
       final docs = await _databaseService.getOrdersByQuery([
-        Query.equal('status', 'ongoing'),
+        Query.orderDesc(r'$createdAt'),
+        Query.limit(100),
       ]);
-      // Hanya tampilkan pesanan yang belum diambil kurir manapun
+      // Hanya tampilkan pesanan yang ongoing dan belum diambil kurir manapun
       return docs
           .where((doc) =>
               doc['status'] == 'ongoing' &&

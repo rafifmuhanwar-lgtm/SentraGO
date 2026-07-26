@@ -199,4 +199,91 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  Future<void> updateCourierFcmToken(String courierId, String token) async {
+    try {
+      await _databases.updateDocument(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.couriersCollection,
+        documentId: courierId,
+        data: {
+          'fcmToken': token,
+        },
+      );
+    } catch (e) {
+      print('updateCourierFcmToken error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> listUsers({int limit = 50}) async {
+    try {
+      final docs = await _databases.listDocuments(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.usersCollection,
+        queries: [Query.limit(limit)],
+      );
+      return docs.documents.map((doc) => {...doc.data, '\$id': doc.$id}).toList();
+    } catch (e) {
+      print('listUsers error: $e');
+      return [];
+    }
+  }
+
+  // ─── Notification Methods ───
+
+  Future<List<Map<String, dynamic>>> getUserNotifications(String userId) async {
+    try {
+      final docs = await _databases.listDocuments(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        queries: [
+          Query.equal('userId', userId),
+          Query.orderDesc('createdAt'),
+          Query.limit(50),
+        ],
+      );
+      return docs.documents.map((doc) => {...doc.data, '\$id': doc.$id}).toList();
+    } catch (e) {
+      print('getUserNotifications error: $e');
+      return [];
+    }
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    try {
+      await _databases.updateDocument(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        documentId: notificationId,
+        data: {'isRead': true},
+      );
+    } catch (e) {
+      print('markNotificationAsRead error: $e');
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    try {
+      // Ambil dulu semua notif yg unread
+      final docs = await _databases.listDocuments(
+        databaseId: AppConfig.appwriteDatabaseId,
+        collectionId: AppConfig.notificationsCollection,
+        queries: [
+          Query.equal('userId', userId),
+          Query.equal('isRead', false),
+          Query.limit(50),
+        ],
+      );
+      for (final doc in docs.documents) {
+        await _databases.updateDocument(
+          databaseId: AppConfig.appwriteDatabaseId,
+          collectionId: AppConfig.notificationsCollection,
+          documentId: doc.$id,
+          data: {'isRead': true},
+        );
+      }
+    } catch (e) {
+      print('markAllNotificationsAsRead error: $e');
+    }
+  }
 }

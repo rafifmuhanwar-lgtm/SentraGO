@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 
@@ -117,7 +118,7 @@ class HelpCenterScreen extends StatelessWidget {
                       title: 'Live Chat',
                       color: Colors.blue,
                       onTap: () {
-                        // Nanti bisa diarahkan ke room chat CS khusus
+                        context.push('/cs-chat');
                       },
                     ),
                   ),

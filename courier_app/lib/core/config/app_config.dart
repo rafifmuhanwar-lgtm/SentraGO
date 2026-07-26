@@ -21,6 +21,7 @@ class AppConfig {
   static const String ordersCollection = 'orders';
   static const String chatsCollection = 'chats';
   static const String withdrawalsCollection = 'withdrawals';
+  static const String notificationsCollection = 'notifications';
 
   // ── Appwrite Storage Bucket IDs ──
   static String get storageBucketId =>

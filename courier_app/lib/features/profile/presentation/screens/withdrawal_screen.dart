@@ -20,11 +20,97 @@ class _WithdrawalScreenState extends ConsumerState<WithdrawalScreen> {
   final _bankNameController = TextEditingController();
   final _accountNumberController = TextEditingController();
   bool _isSubmitting = false;
+  bool _isFormatting = false;
+  String? _selectedBank;
+
+  static const List<String> _bankList = [
+    // ── Bank Konvensional ──
+    'BCA (Bank Central Asia)',
+    'Mandiri',
+    'BRI (Bank Rakyat Indonesia)',
+    'BNI (Bank Negara Indonesia)',
+    'BSI (Bank Syariah Indonesia)',
+    'BTN',
+    'CIMB Niaga',
+    'Danamon',
+    'Permata',
+    'Maybank',
+    'Panin Bank',
+    'OCBC NISP',
+    'UOB Indonesia',
+    'HSBC Indonesia',
+    'Standard Chartered',
+    // ── Bank Daerah ──
+    'Bank Jago',
+    'Bank Neo Commerce',
+    'Bank BJB',
+    'Bank DKI',
+    'Bank Jatim',
+    'Bank Jateng',
+    'Bank Sumut',
+    'Bank Kaltimtara',
+    'Bank Sulselbar',
+    'Bank NTB Syariah',
+    'Bank Papua',
+    'Bank Nagari',
+    'Bank Aceh Syariah',
+    'Bank Riau Kepri',
+    // ── Bank Digital ──
+    'Bank Digital BCA (Blu)',
+    'Jenius (Bank BTPN)',
+    'Bank Saqu',
+    'Digibank (DBS)',
+    'Motion Banking (Bank Danamon)',
+    'Line Bank',
+    'SeaBank',
+    'Krom Bank',
+    'SuperBank',
+    // ── E-Wallet ──
+    'GoPay',
+    'OVO',
+    'DANA',
+    'LinkAja',
+    'ShopeePay',
+    'iSaku',
+    'Paytren',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Format rupiah otomatis saat user mengetik
+    _amountController.addListener(() {
+      if (_isFormatting) return;
+      _isFormatting = true;
+
+      final text = _amountController.text;
+      // Hapus semua karakter non-digit
+      final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (digits.isEmpty) {
+        _amountController.text = '';
+      } else {
+        final number = int.parse(digits);
+        // Format dengan titik
+        final formatted = number.toString().replaceAllMapped(
+          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+          (match) => '${match.group(1)}.',
+        );
+        // Set cursor di akhir
+        final pos = formatted.length;
+        _amountController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: pos),
+        );
+      }
+
+      _isFormatting = false;
+    });
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
-    _bankNameController.dispose();
+    _bankNameController.dispose(); // masih dipake fallback
     _accountNumberController.dispose();
     super.dispose();
   }
@@ -64,7 +150,7 @@ class _WithdrawalScreenState extends ConsumerState<WithdrawalScreen> {
       await dbService.createWithdrawal({
         'courierId': courier.id,
         'amount': amount,
-        'bankName': _bankNameController.text.trim(),
+        'bankName': _selectedBank ?? _bankNameController.text.trim(),
         'accountNumber': _accountNumberController.text.trim(),
         'status': 'pending',
       });
@@ -149,14 +235,20 @@ class _WithdrawalScreenState extends ConsumerState<WithdrawalScreen> {
                     ),
                     const SizedBox(height: 8),
                     earningsAsync.when(
-                      data: (data) => Text(
-                        'Rp ${data.saldo.toInt()}',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      data: (data) {
+                        final formatted = data.saldo.toInt().toString().replaceAllMapped(
+                          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+                          (match) => '${match.group(1)}.',
+                        );
+                        return Text(
+                          'Rp$formatted',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      },
                       loading: () => const CircularProgressIndicator(color: Colors.white),
                       error: (e, _) => Text(
                         'Error',
@@ -188,27 +280,51 @@ class _WithdrawalScreenState extends ConsumerState<WithdrawalScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nominal Penarikan',
                   prefixText: 'Rp ',
+                  prefixStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Masukkan nominal';
+                  final number = int.tryParse(val.replaceAll('.', ''));
+                  if (number == null || number <= 0) return 'Nominal tidak valid';
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               
-              TextFormField(
-                controller: _bankNameController,
+              DropdownButtonFormField<String>(
+                value: _selectedBank,
                 decoration: InputDecoration(
-                  labelText: 'Nama Bank (contoh: BCA, Mandiri)',
+                  labelText: 'Bank / E-Wallet',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
+                hint: const Text('Pilih bank atau e-wallet'),
+                isExpanded: true,
+                items: _bankList.map((bank) {
+                  final isEwallet = ['GoPay', 'OVO', 'DANA', 'LinkAja', 'ShopeePay', 'iSaku', 'Paytren'].contains(bank);
+                  final isDigital = ['Blu', 'Jenius', 'Saqu', 'Digibank', 'Motion', 'Line Bank', 'SeaBank', 'Krom', 'SuperBank'].any((k) => bank.contains(k));
+                  String prefix;
+                  if (isEwallet) prefix = '📱 ';
+                  else if (isDigital) prefix = '💳 ';
+                  else prefix = '🏦 ';
+                  return DropdownMenuItem(
+                    value: bank,
+                    child: Text('$prefix$bank', overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() => _selectedBank = val);
+                },
                 validator: (val) {
-                  if (val == null || val.isEmpty) return 'Masukkan nama bank';
+                  if (val == null || val.isEmpty) return 'Pilih bank atau e-wallet';
                   return null;
                 },
               ),

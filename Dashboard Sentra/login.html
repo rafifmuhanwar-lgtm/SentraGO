@@ -105,7 +105,34 @@
 
 
 
-<script src="js/auth.js"></script>
+<script type="module">
+    import { login } from './js/auth.js';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const messageEl = document.getElementById('message');
+        const btn = e.target.querySelector('button');
+
+        btn.disabled = true;
+        btn.textContent = 'Memuat...';
+        messageEl.textContent = '';
+
+        const result = await login(email, password);
+
+        if (result.success) {
+            messageEl.style.color = 'green';
+            messageEl.textContent = 'Login berhasil! Mengarahkan...';
+            window.location.href = 'dashboard.html';
+        } else {
+            messageEl.style.color = 'red';
+            messageEl.textContent = result.error;
+            btn.disabled = false;
+            btn.textContent = 'Login';
+        }
+    });
+</script>
 
 
 </body>

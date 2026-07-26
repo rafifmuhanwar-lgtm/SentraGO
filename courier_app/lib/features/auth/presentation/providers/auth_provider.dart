@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/push_notification_service.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../domain/models/courier_model.dart';
 
@@ -52,6 +53,9 @@ class AuthNotifier extends Notifier<AuthState> {
         // profile data (vehicleType, selectedArea, kycVerified) with null values.
         // saveCourierToDatabase should only be called on first registration.
         state = state.copyWith(status: AuthStatus.authenticated, courier: courier);
+
+        // Register FCM token ke dokumen courier
+        _registerFcmToken(courier.id);
       } else {
         debugPrint('AUTH DEBUG - Courier is null / no active session');
         state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -161,7 +165,28 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<void> _registerFcmToken(String courierId) async {
+    try {
+      final pushService = ref.read(pushNotificationServiceProvider);
+      final token = await pushService.getToken();
+      if (token != null && token.isNotEmpty) {
+        await pushService.registerTokenToServer(courierId, token);
+      }
+    } catch (e) {
+      debugPrint('Failed to register FCM token on login: $e');
+    }
+  }
+
   Future<void> logout() async {
+    // Hapus FCM token
+    final courier = state.courier;
+    if (courier != null) {
+      try {
+        final pushService = ref.read(pushNotificationServiceProvider);
+        await pushService.deleteToken(courier.id);
+      } catch (_) {}
+    }
+
     final repository = ref.read(authRepositoryProvider);
     await repository.logout();
     state = const AuthState(status: AuthStatus.unauthenticated);

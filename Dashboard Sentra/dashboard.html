@@ -12,14 +12,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script>
-
-        if(!localStorage.getItem("adminLogin")){
-
-            window.location.href="login.html";
-
-        }
-
+    <script type="module" src="js/appwrite-config.js"></script>
+    <script type="module">
+        import { checkAuth, logout } from './js/auth.js';
+        const user = await checkAuth();
+        document.querySelector('.admin')?.addEventListener('click', () => {
+            if (confirm('Yakin ingin logout?')) logout();
+        });
     </script>
 
 </head>
@@ -56,6 +55,10 @@
             <li>📈 Laporan</li>
         </a>
 
+        <a href="withdrawal.html" style="text-decoration:none;color:white;">
+            <li>💰 Withdrawal</li>
+        </a>
+
         <a href="cs.html" style="text-decoration:none;color:white;">
             <li>💬 Customer Service</li>
         </a>
@@ -71,6 +74,7 @@
 
 
 
+
 <div class="main">
 
 
@@ -80,9 +84,7 @@
 
 
     <div class="admin">
-
         Admin
-
     </div>
 
 
@@ -154,8 +156,6 @@
 
 
 
-
-
 <!-- Chart -->
 
 <div class="chart">
@@ -163,8 +163,6 @@
     <canvas id="myChart"></canvas>
 
 </div>
-
-
 
 
 
@@ -232,7 +230,7 @@
 
 
 
-<script src="js/dashboard.js"></script>
+<script type="module" src="js/dashboard.js"></script>
 
 
 </body>

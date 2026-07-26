@@ -7,6 +7,9 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/help_center_screen.dart';
+import '../../features/profile/presentation/screens/transaction_history_screen.dart';
+import '../../features/profile/presentation/screens/settings_screen.dart';
+import '../../features/notification/presentation/screens/notification_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/kyc/presentation/screens/kyc_screen.dart';
 import '../../features/main/presentation/screens/main_screen.dart';
@@ -20,6 +23,7 @@ import '../../features/order/domain/models/order_model.dart';
 import '../../features/order/presentation/screens/order_detail_screen.dart';
 import '../../features/order/presentation/screens/receipt_screen.dart';
 import '../../features/profile/presentation/screens/withdrawal_screen.dart';
+import '../../features/cs_chat/presentation/screens/cs_chat_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'homeNav');
@@ -172,6 +176,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const WithdrawalScreen(),
                   ),
+                  GoRoute(
+                    path: 'transactions',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const TransactionHistoryScreen(),
+                  ),
+                  GoRoute(
+                    path: 'settings',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const SettingsScreen(),
+                  ),
                 ],
               ),
             ],
@@ -179,6 +193,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Route Notifikasi
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationScreen(),
+      ),
       // Route untuk detail order (bisa dibuka dari mana saja)
       GoRoute(
         path: '/order/detail',
@@ -196,6 +216,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           final order = state.extra as OrderModel;
           return ReceiptScreen(order: order);
         },
+      ),
+      // Route CS Chat — full screen overlay
+      GoRoute(
+        path: '/cs-chat',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CsChatScreen(),
       ),
       // Route chat room — full screen overlay
       GoRoute(

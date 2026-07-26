@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "884531886128",
+    "project_id": "sentrago-27157",
+    "storage_bucket": "sentrago-27157.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884531886128:android:82eae93ff9688278ee55f5",
+        "android_client_info": {
+          "package_name": "com.sentrago.courier_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYdZBr7MMphy82GogazA8n1MzmoT9sS9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884531886128:android:734f72a78fe1dd57ee55f5",
+        "android_client_info": {
+          "package_name": "com.sentrago.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYdZBr7MMphy82GogazA8n1MzmoT9sS9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

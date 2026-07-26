@@ -217,14 +217,17 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const Divider(height: 1, indent: 64),
                   _buildMenuItem(
+                    icon: Icons.notifications_outlined,
+                    title: 'Notifikasi',
+                    subtitle: 'Kirim dan lihat riwayat notifikasi',
+                    onTap: () => context.push('/notifications'),
+                  ),
+                  const Divider(height: 1, indent: 64),
+                  _buildMenuItem(
                     icon: Icons.history,
                     title: 'Riwayat Transaksi',
                     subtitle: 'Lihat daftar transaksi sebelumnya',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Fitur segera hadir')),
-                      );
-                    },
+                    onTap: () => context.push('/profile/transactions'),
                   ),
                   const Divider(height: 1, indent: 64),
                   _buildMenuItem(
@@ -238,11 +241,7 @@ class ProfileScreen extends ConsumerWidget {
                     icon: Icons.settings_outlined,
                     title: 'Pengaturan',
                     subtitle: 'Notifikasi, privasi dan keamanan',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Fitur segera hadir')),
-                      );
-                    },
+                    onTap: () => context.push('/profile/settings'),
                   ),
                 ],
               ),
@@ -311,13 +310,23 @@ class ProfileScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        gradient: isWide
+            ? LinearGradient(
+                colors: [color.withValues(alpha: 0.05), AppColors.surface],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              )
+            : null,
+        color: isWide ? null : AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isWide ? color.withValues(alpha: 0.2) : AppColors.border,
+          width: isWide ? 1.5 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
+            color: color.withValues(alpha: isWide ? 0.08 : 0.03),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -328,31 +337,33 @@ class ProfileScreen extends ConsumerWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 16, color: color),
+                child: Icon(icon, size: isWide ? 20 : 16, color: color),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: 13,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
+              if (isWide)
+                Icon(Icons.arrow_forward_ios, size: 12, color: color.withValues(alpha: 0.5)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             amount,
             style: GoogleFonts.poppins(
-              fontSize: isWide ? 22 : 16,
+              fontSize: isWide ? 22 : 18,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),

@@ -20,14 +20,13 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-<script>
-
-if(!localStorage.getItem("adminLogin")){
-
-    window.location.href="login.html";
-
-}
-
+<script type="module" src="js/appwrite-config.js"></script>
+<script type="module">
+    import { checkAuth, logout } from './js/auth.js';
+    const user = await checkAuth();
+    document.querySelector('.admin')?.addEventListener('click', () => {
+        if (confirm('Yakin ingin logout?')) logout();
+    });
 </script>
 
 
@@ -84,6 +83,10 @@ Admin
 <li class="active">📈 Laporan</li>
 </a>
 
+<a href="withdrawal.html" style="text-decoration:none;color:white;">
+<li>💰 Withdrawal</li>
+</a>
+
 <a href="cs.html" style="text-decoration:none;color:white;">
     <li>💬 Customer Service</li>
 </a>
@@ -97,6 +100,7 @@ Admin
 
 
 </div>
+
 
 
 
@@ -157,13 +161,11 @@ Export Excel
 
 </div>
 
-
+    <div class="admin" style="cursor:pointer;">
+        Admin
+    </div>
 
 </header>
-
-
-
-
 
 
 
@@ -216,8 +218,6 @@ Tanggal Akhir
 
 
 
-
-
 <button class="btn-filter">
 
 
@@ -231,7 +231,6 @@ Terapkan
 
 
 </div>
-
 
 
 
@@ -357,7 +356,6 @@ Driver Aktif
 
 
 
-
 <div class="chart">
 
 
@@ -375,10 +373,6 @@ Driver Aktif
 
 
 </div>
-
-
-
-
 
 
 
@@ -406,8 +400,6 @@ Top Driver
 
 
 </div>
-
-
 
 
 
@@ -448,7 +440,6 @@ Top Driver
 
 Belum ada data driver
 
-
 </td>
 
 
@@ -462,6 +453,11 @@ Belum ada data driver
 </table>
 
 
+</div>
+
+
+
+
 
 </div>
 
@@ -469,18 +465,7 @@ Belum ada data driver
 
 
 
-
-</div>
-
-
-
-
-
-
-
-
-
-<script src="js/report.js"></script>
+<script type="module" src="js/reports.js"></script>
 
 
 </body>
