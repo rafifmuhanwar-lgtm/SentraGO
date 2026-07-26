@@ -152,6 +152,17 @@ Untuk men-*deploy* proyek ini ke instans Appwrite Anda sendiri, Anda perlu membu
 
 ---
 
+## 🔮 Fitur Selanjutnya (Future Features)
+
+- **Chatbot Customer Service:** Fitur obrolan (chat) terintegrasi dengan bot untuk layanan pelanggan. Jika bot tidak dapat menjawab atau menyelesaikan masalah, pengguna akan diberikan opsi untuk dihubungkan langsung dengan agen layanan pelanggan (*live agent*).
+- **Promo & Voucher Management:** Modul khusus bagi admin untuk membuat dan mengatur kode diskon, periode promo, atau limit penggunaan bagi pengguna.
+- **Global Live Map:** Peta interaktif raksasa yang menampilkan pergerakan seluruh kurir aktif secara *real-time* di satu layar (sangat berguna untuk tim *operation/dispatch*).
+- **Geofencing & Dynamic Pricing:** Admin dapat menggambar batas wilayah (*polygon*) di peta, misalnya menetapkan "Zona A", di mana jika sedang hujan atau *rush hour*, harga dasar pengiriman akan naik secara otomatis (*surge pricing*).
+- **Ticketing/Helpdesk System:** Mengintegrasikan keluhan yang masuk dari Chatbot Customer Service ke dalam *dashboard* admin sebagai "tiket", sehingga agen *customer service* bisa merespons keluhan secara berurutan (*queue*).
+- **Google Maps Integration:** Bermigrasi dari layanan pemetaan Mapbox ke Google Maps API untuk meningkatkan akurasi peta, rute, dan kapabilitas lokasi.
+
+---
+
 ## 📝 Lisensi
 
 Proyek ini bersifat tertutup (*proprietary*) dan rahasia. Dilarang keras menyalin file-file dalam repositori ini tanpa izin.
