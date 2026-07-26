@@ -273,42 +273,6 @@ Buka browser → `http://localhost:8000/dashboard.html`
 
 ---
 
-## 🧪 Alur Demo (10 Menit)
-
-### Flow 1: Pembuatan Pesanan (Customer → Courier) — 4 menit
-1. Buka Customer App → Login → Buat pesanan Jastip
-2. Buka Courier App → Login → Tab **Tersedia** → Lihat pesanan baru
-3. Courier **Accept** → status berubah → customer dapat notif
-4. Buka **Dashboard Admin** → Lihat statistik & daftar pesanan
-
-### Flow 2: Live CS Chat — 3 menit
-1. Customer App → Profil → Pusat Bantuan → **Live Chat CS**
-2. Kirim pesan "Halo CS"
-3. Buka **Dashboard Admin** → **Customer Service** → Lihat chat masuk
-4. Admin balas pesan
-
-### Flow 3: Withdrawal — 2 menit
-1. Courier App → Tarik Saldo → Ajukan penarikan
-2. Buka **Dashboard Admin** → **Withdrawal** → Lihat permintaan
-3. Klik **Setuju** → status berubah
-
-### Flow 4: Dashboard — 1 menit
-1. Lihat grafik pendapatan (biaya layanan)
-2. Filter pesanan by status
-3. Lihat laporan
-
----
-
-## 📸 Screenshot
-
-> *(Tambahkan screenshot aplikasi di sini)*
-
-| Customer App | Courier App | Admin Dashboard |
-|---|---|---|
-| *(placeholder)* | *(placeholder)* | *(placeholder)* |
-
----
-
 ## 🔮 Fitur Selanjutnya (Future Features)
 
 - **Chatbot Customer Service:** Fitur obrolan (chat) terintegrasi dengan bot untuk layanan pelanggan. Jika bot tidak dapat menjawab atau menyelesaikan masalah, pengguna akan diberikan opsi untuk dihubungkan langsung dengan agen layanan pelanggan (*live agent*).
@@ -323,6 +287,7 @@ Buka browser → `http://localhost:8000/dashboard.html`
 ## 📝 Lisensi
 
 Proyek ini bersifat proprietary. Hak cipta dilindungi undang-undang.
+barang siapa yg mengubah atau menjiplak, akan di tindak lanjuti!
 
 ---
 
